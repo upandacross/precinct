@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}{{ display_name }} - Static Content{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="fas fa-file-code"></i> {{ display_name }}</h1>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-file"></i> {{ filename }}
+                </p>
+            </div>
+            <div>
+                {% if is_user_map %}
+                    <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Profile
+                    </a>
+                {% elif is_public_view %}
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('static_content') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Library
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-eye"></i> Document Content</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="static-content-wrapper" style="background: white; min-height: 500px;">
+                    {% if is_user_map %}
+                        <iframe src="{{ url_for('view_user_map_raw', filename=filename) }}" 
+                                style="width: 100%; height: 600px; border: none; border-radius: 0.375rem;"
+                                frameborder="0"
+                                allowfullscreen>
+                            <p>Your browser does not support iframes. <a href="{{ url_for('view_user_map_raw', filename=filename) }}" target="_blank">Click here to view the content</a>.</p>
+                        </iframe>
+                    {% else %}
+                        <iframe src="{{ url_for('view_static_content_raw', filename=filename) }}" 
+                                style="width: 100%; height: 600px; border: none; border-radius: 0.375rem;"
+                                frameborder="0"
+                                allowfullscreen>
+                            <p>Your browser does not support iframes. <a href="{{ url_for('view_static_content_raw', filename=filename) }}" target="_blank">Click here to view the content</a>.</p>
+                        </iframe>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-compass"></i> Navigation</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    {% if is_user_map %}
+                        <a href="{{ url_for('profile') }}" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                    {% elif is_public_view %}
+                        <a href="{{ url_for('profile') }}" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('static_content') }}" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-folder"></i> Content Library
+                        </a>
+                    {% endif %}
+                    {% if not current_user.is_admin %}
+                        <a href="{{ url_for('analysis') }}" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-chart-line"></i> Analytics
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('profile') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-cogs"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('view_static_content_raw', filename=filename) }}" 
+                       target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-external-link-alt"></i> In New Tab
+                    </a>
+                    <button onclick="printIframe()" class="btn btn-sm btn-outline-dark">
+                        <i class="fas fa-print"></i> Print Document
+                    </button>
+                    <button onclick="toggleFullscreen()" class="btn btn-sm btn-outline-warning" id="fullscreenBtn">
+                        <i class="fas fa-expand"></i> Fullscreen
+                    </button>
+                    <button onclick="window.history.back()" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-arrow-left"></i> Go Back
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Document Info</h5>
+            </div>
+            <div class="card-body">
+                <p class="small mb-2">
+                    <strong>Filename:</strong><br>
+                    <code>{{ filename }}</code>
+                </p>
+                <p class="small mb-2">
+                    <strong>Display Name:</strong><br>
+                    {{ display_name }}
+                </p>
+                <p class="small mb-0">
+                    <strong>Content Type:</strong><br>
+                    Static HTML Document
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.static-content-wrapper {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    overflow: auto;
+}
+
+.static-content-wrapper iframe {
+    width: 100%;
+    min-height: 500px;
+    border: none;
+}
+
+/* Fullscreen styles */
+.fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: white !important;
+    padding: 20px !important;
+    overflow: hidden !important;
+}
+
+.fullscreen .static-content-wrapper {
+    height: calc(100vh - 40px) !important;
+}
+
+.fullscreen iframe {
+    height: calc(100vh - 40px) !important;
+}
+</style>
+
+<script>
+function toggleFullscreen() {
+    const wrapper = document.querySelector('.static-content-wrapper');
+    const btn = document.getElementById('fullscreenBtn');
+    
+    if (wrapper.classList.contains('fullscreen')) {
+        wrapper.classList.remove('fullscreen');
+        btn.innerHTML = '<i class="fas fa-expand"></i> Fullscreen';
+    } else {
+        wrapper.classList.add('fullscreen');
+        btn.innerHTML = '<i class="fas fa-compress"></i> Exit Fullscreen';
+    }
+}
+
+function printIframe() {
+    const iframe = document.querySelector('iframe');
+    if (iframe && iframe.contentWindow) {
+        try {
+            iframe.contentWindow.print();
+        } catch (e) {
+            // If printing from iframe fails, open in new window and print
+            window.open('{{ url_for("view_static_content_raw", filename=filename) }}', '_blank');
+        }
+    }
+}
+
+// Exit fullscreen on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const wrapper = document.querySelector('.static-content-wrapper');
+        const btn = document.getElementById('fullscreenBtn');
+        if (wrapper.classList.contains('fullscreen')) {
+            wrapper.classList.remove('fullscreen');
+            btn.innerHTML = '<i class="fas fa-expand"></i> Fullscreen';
+        }
+    }
+});
+
+// Ensure iframe loads properly
+document.addEventListener('DOMContentLoaded', function() {
+    const iframe = document.querySelector('iframe');
+    if (iframe) {
+        iframe.onload = function() {
+            console.log('Static HTML content loaded successfully');
+        };
+        iframe.onerror = function() {
+            console.error('Error loading static HTML content');
+        };
+    }
+});
+</script>
+{% endblock %}
