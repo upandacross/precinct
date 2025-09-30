@@ -1,0 +1,12 @@
+# Python-generated files
+__pycache__/
+build/
+dist/
+instance/app.db
+wheels/
+*.egg-info
+*.py[oc]
+uv.lock
+*.tar
+
+# Virtual environments

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Static Content - Precinct Leaders App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-file-alt"></i> Static Content Library</h1>
+        <p class="lead">Browse and view static HTML documents and resources.</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-folder-open"></i> Available Documents</h5>
+            </div>
+            <div class="card-body">
+                {% if files %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-file"></i> Document</th>
+                                    <th><i class="fas fa-info-circle"></i> Size</th>
+                                    <th><i class="fas fa-calendar"></i> Modified</th>
+                                    <th><i class="fas fa-cogs"></i> Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in files %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-file-code text-primary"></i>
+                                        <strong>{{ file.display_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ file.name }}</small>
+                                    </td>
+                                    <td>
+                                        {% if file.size < 1024 %}
+                                            {{ file.size }} B
+                                        {% elif file.size < 1024 * 1024 %}
+                                            {{ "%.1f"|format(file.size / 1024) }} KB
+                                        {% else %}
+                                            {{ "%.1f"|format(file.size / (1024 * 1024)) }} MB
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ file.modified.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('view_static_content', filename=file.name) }}" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> No Documents Found</h6>
+                        <p class="mb-0">No static HTML files are currently available. Add HTML files to the <code>static_html</code> directory to display them here.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-cogs"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    {% if not current_user.is_admin %}
+                        <a href="{{ url_for('analysis') }}" class="btn btn-outline-info">
+                            <i class="fas fa-chart-line"></i> Precinct Analytics
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('about') }}" class="btn btn-outline-dark">
+                        <i class="fas fa-info-circle"></i> About
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> About Static Content</h5>
+            </div>
+            <div class="card-body">
+                <p class="small">Static HTML files allow you to display custom content with full HTML, CSS, and JavaScript support.</p>
+                <ul class="small">
+                    <li>Files are stored in <code>static_html/</code></li>
+                    <li>Only <code>.html</code> files are displayed</li>
+                    <li>Content is rendered with navigation</li>
+                    <li>Full HTML formatting supported</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

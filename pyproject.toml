@@ -1,0 +1,18 @@
+[project]
+name = "login-admin-encrypt-pass"
+version = "0.1.1"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0.0",
+    "flask-admin>=1.6.1",
+    "flask-login>=0.6.3",
+    "flask-sqlalchemy>=3.0.0",
+    "flask-wtf>=1.1.0",
+    "werkzeug>=3.0.0",
+    "passlib>=1.7.4",
+    "wtforms==3.0.0",
+    "dash>=3.2.0",
+    "pandas>=2.3.2",
+]
