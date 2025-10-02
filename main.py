@@ -9,11 +9,7 @@ from wtforms.validators import DataRequired, Length, Email
 from models import db, User
 from datetime import datetime
 from config import get_config
-try:
-    from dash_analytics import create_dash_app
-    DASH_AVAILABLE = True
-except ImportError:
-    DASH_AVAILABLE = False
+from flask import send_file
 # TODO: flask_limit
 # TODP: CSRF
 # TODO: research HSTS and CSP via Flask-Talisman, X-Frame-Options deny
@@ -91,10 +87,6 @@ def create_app():
     )
     admin.add_view(UserModelView(User, db.session, name='Users'))
     
-    # Dash Analytics Integration
-    if DASH_AVAILABLE:
-        dash_app = create_dash_app(app)
-    
     @app.route('/')
     @login_required
     def index():
@@ -147,13 +139,31 @@ def create_app():
     @app.route('/analysis')
     @login_required
     def analysis():
-        """Precinct Analytics page with Dash charts and graphs."""
-        if DASH_AVAILABLE:
-            # Redirect to Dash analytics app
-            return redirect('/dash/analytics/')
-        else:
-            # Fallback to simple message if Dash is not available
-            flash('Dash analytics is not available. Please install dash, plotly, and pandas packages.', 'warning')
+        """Display the analytics PDF in a viewer with fullscreen capability."""
+        try:
+            pdf_path = os.path.join(app.root_path, 'static', 'pdf', 'Dash.pdf')
+            if os.path.exists(pdf_path):
+                return render_template('pdf_viewer.html')
+            else:
+                flash('Analytics PDF file not found.', 'error')
+                return redirect(url_for('index'))
+        except Exception as e:
+            flash(f'Error loading analytics PDF: {str(e)}', 'error')
+            return redirect(url_for('index'))
+    
+    @app.route('/analysis-raw')
+    @login_required
+    def analysis_raw():
+        """Serve the raw PDF file for iframe embedding."""
+        try:
+            pdf_path = os.path.join(app.root_path, 'static', 'pdf', 'Dash.pdf')
+            if os.path.exists(pdf_path):
+                return send_file(pdf_path, as_attachment=False, mimetype='application/pdf')
+            else:
+                flash('Analytics PDF file not found.', 'error')
+                return redirect(url_for('index'))
+        except Exception as e:
+            flash(f'Error serving analytics PDF: {str(e)}', 'error')
             return redirect(url_for('index'))
     
     @app.route('/profile')
@@ -382,9 +392,17 @@ def create_app():
     return app
 
 def main():
-    """Run the Flask application."""
-    app = create_app()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    """Run the Flask application using Waitress WSGI server."""
+    try:
+        from waitress import serve
+        app = create_app()
+        print("Starting Waitress WSGI server on http://0.0.0.0:5000")
+        print("Created default admin user: admin/admin123")
+        serve(app, host='0.0.0.0', port=5000, url_scheme='http')
+    except Exception as e:
+        print(f"Error starting server: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()

@@ -13,6 +13,5 @@ dependencies = [
     "werkzeug>=3.0.0",
     "passlib>=1.7.4",
     "wtforms==3.0.0",
-    "dash>=3.2.0",
-    "pandas>=2.3.2",
+    "waitress>=3.0.0",
 ]

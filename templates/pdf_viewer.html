@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Precinct Leaders App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; height: 100vh; overflow: hidden;">
+    <!-- Custom Navbar for Analytics -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary" style="z-index: 1000;">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="fas fa-chart-line"></i> Analytics Dashboard
+            </span>
+            
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i> {{ current_user.username }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('profile') }}">
+                            <i class="fas fa-user"></i> Profile
+                        </a></li>
+                        {% if current_user.is_admin %}
+                        <li><a class="dropdown-item" href="{{ url_for('static_content') }}">
+                            <i class="fas fa-folder"></i> Content Library
+                        </a></li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a></li>
+                    </ul>
+                </div>
+                
+                <button class="btn btn-outline-light btn-sm ms-2" onclick="zoomIn()" title="Zoom In">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                
+                <button class="btn btn-outline-light btn-sm ms-1" onclick="zoomOut()" title="Zoom Out">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                
+                <button class="btn btn-outline-light btn-sm ms-1" onclick="resetZoom()" title="Reset Zoom">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                </button>
+                
+                <button class="btn btn-outline-light btn-sm ms-2" onclick="printPDF()" title="Print PDF">
+                    <i class="fas fa-print"></i>
+                </button>
+                
+                <a href="{{ url_for('index') }}" class="btn btn-outline-light btn-sm ms-2" title="Return to Dashboard">
+                    <i class="fas fa-home"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Full Screen PDF Content with Pan and Zoom -->
+    <div class="pdf-container" style="height: calc(100vh - 56px); width: 100%; background: #f8f9fa; overflow: hidden; position: relative;" id="pdfContainer">
+        <div class="pdf-wrapper" id="pdfWrapper" style="transform-origin: 0 0; transition: transform 0.2s ease; position: relative;">
+            <iframe src="{{ url_for('analysis_raw') }}" 
+                    id="pdfIframe"
+                    style="width: 100%; height: calc(100vh - 56px); border: none; display: block; pointer-events: auto;"
+                    frameborder="0"
+                    allowfullscreen>
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <div class="alert alert-warning">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Browser Not Supported</h4>
+                        <p>Your browser does not support iframes. <a href="{{ url_for('analysis_raw') }}" target="_blank" class="btn btn-primary">Click here to view the PDF</a>.</p>
+                    </div>
+                </div>
+            </iframe>
+            
+            <!-- Transparent overlay for pan interactions when zoomed -->
+            <div id="panOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; cursor: default;"></div>
+        </div>
+        
+        <!-- Zoom level indicator -->
+        <div id="zoomIndicator" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 100;">
+            Zoom: <span id="zoomLevel">100%</span>
+        </div>
+        
+        <!-- Instructions overlay -->
+        <div id="instructionsOverlay" style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 8px 12px; border-radius: 5px; font-size: 11px; z-index: 100; opacity: 0; transition: opacity 0.3s;">
+            <div><strong>Controls:</strong></div>
+            <div>• Ctrl+Wheel: Zoom • Click+Drag: Pan • Ctrl+0: Reset</div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    let currentZoom = 1.0;
+    let isPanning = false;
+    let startX, startY;
+    let currentX = 0, currentY = 0;
+    
+    function printPDF() {
+        const iframe = document.querySelector('iframe');
+        if (iframe && iframe.contentWindow) {
+            try {
+                iframe.contentWindow.print();
+            } catch (e) {
+                // If printing from iframe fails, open in new window and print
+                window.open('{{ url_for("analysis_raw") }}', '_blank');
+            }
+        }
+    }
+
+    function zoomIn() {
+        currentZoom = Math.min(currentZoom * 1.2, 3.0); // Max zoom 300%
+        updateZoom();
+    }
+
+    function zoomOut() {
+        currentZoom = Math.max(currentZoom / 1.2, 0.5); // Min zoom 50%
+        updateZoom();
+    }
+
+    function resetZoom() {
+        currentZoom = 1.0;
+        currentX = 0;
+        currentY = 0;
+        updateZoom();
+    }
+
+    function updateZoom() {
+        const wrapper = document.getElementById('pdfWrapper');
+        const container = document.getElementById('pdfContainer');
+        const iframe = document.getElementById('pdfIframe');
+        const zoomLevel = document.getElementById('zoomLevel');
+        const overlay = document.getElementById('panOverlay');
+        const instructions = document.getElementById('instructionsOverlay');
+        
+        // Update zoom level display
+        zoomLevel.textContent = Math.round(currentZoom * 100) + '%';
+        
+        // Apply transform
+        wrapper.style.transform = `scale(${currentZoom}) translate(${currentX}px, ${currentY}px)`;
+        
+        // Adjust iframe size for proper scaling
+        if (currentZoom !== 1.0) {
+            iframe.style.width = (100 / currentZoom) + '%';
+            iframe.style.height = `calc((100vh - 56px) / ${currentZoom})`;
+        } else {
+            iframe.style.width = '100%';
+            iframe.style.height = 'calc(100vh - 56px)';
+        }
+        
+        // Enable/disable pan overlay based on zoom level
+        if (currentZoom > 1.0) {
+            overlay.style.pointerEvents = 'auto';
+            overlay.style.cursor = 'grab';
+            container.style.cursor = 'grab';
+            // Show instructions briefly when first zoomed
+            if (currentZoom > 1.0 && !instructions.hasAttribute('data-shown')) {
+                instructions.style.opacity = '1';
+                instructions.setAttribute('data-shown', 'true');
+                setTimeout(() => {
+                    instructions.style.opacity = '0';
+                }, 3000);
+            }
+        } else {
+            overlay.style.pointerEvents = 'none';
+            overlay.style.cursor = 'default';
+            container.style.cursor = 'default';
+        }
+    }
+
+    // Mouse wheel zoom
+    function handleWheel(e) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                zoomIn();
+            } else {
+                zoomOut();
+            }
+        }
+    }
+
+    // Pan functionality
+    function handleMouseDown(e) {
+        if (currentZoom > 1.0 && (e.target.id === 'panOverlay' || e.target.id === 'pdfContainer')) {
+            isPanning = true;
+            startX = e.clientX - currentX;
+            startY = e.clientY - currentY;
+            const overlay = document.getElementById('panOverlay');
+            const container = document.getElementById('pdfContainer');
+            overlay.style.cursor = 'grabbing';
+            container.style.cursor = 'grabbing';
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+
+    function handleMouseMove(e) {
+        if (isPanning && currentZoom > 1.0) {
+            e.preventDefault();
+            e.stopPropagation();
+            currentX = e.clientX - startX;
+            currentY = e.clientY - startY;
+            
+            // Constrain panning to reasonable bounds
+            const maxPan = 200;
+            currentX = Math.max(-maxPan, Math.min(maxPan, currentX));
+            currentY = Math.max(-maxPan, Math.min(maxPan, currentY));
+            
+            updateZoom();
+        }
+    }
+
+    function handleMouseUp(e) {
+        if (isPanning) {
+            isPanning = false;
+            const overlay = document.getElementById('panOverlay');
+            const container = document.getElementById('pdfContainer');
+            if (currentZoom > 1.0) {
+                overlay.style.cursor = 'grab';
+                container.style.cursor = 'grab';
+            } else {
+                overlay.style.cursor = 'default';
+                container.style.cursor = 'default';
+            }
+        }
+    }
+
+    // Touch support for mobile
+    let touchStartX, touchStartY;
+    let initialDistance = 0;
+    let initialZoom = 1;
+
+    function handleTouchStart(e) {
+        if (e.touches.length === 1) {
+            // Single touch - pan
+            if (currentZoom > 1.0) {
+                touchStartX = e.touches[0].clientX - currentX;
+                touchStartY = e.touches[0].clientY - currentY;
+                isPanning = true;
+            }
+        } else if (e.touches.length === 2) {
+            // Two finger pinch - zoom
+            isPanning = false;
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            initialDistance = Math.sqrt(
+                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                Math.pow(touch2.clientY - touch1.clientY, 2)
+            );
+            initialZoom = currentZoom;
+        }
+        e.preventDefault();
+    }
+
+    function handleTouchMove(e) {
+        if (e.touches.length === 1 && isPanning && currentZoom > 1.0) {
+            currentX = e.touches[0].clientX - touchStartX;
+            currentY = e.touches[0].clientY - touchStartY;
+            updateZoom();
+        } else if (e.touches.length === 2) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.sqrt(
+                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                Math.pow(touch2.clientY - touch1.clientY, 2)
+            );
+            const scale = distance / initialDistance;
+            currentZoom = Math.min(Math.max(initialZoom * scale, 0.5), 3.0);
+            updateZoom();
+        }
+        e.preventDefault();
+    }
+
+    function handleTouchEnd(e) {
+        isPanning = false;
+    }
+
+    // Initialize event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        const iframe = document.querySelector('iframe');
+        const container = document.getElementById('pdfContainer');
+        const overlay = document.getElementById('panOverlay');
+        
+        if (iframe) {
+            iframe.onload = function() {
+                console.log('Analytics PDF loaded successfully');
+            };
+            iframe.onerror = function() {
+                console.error('Error loading Analytics PDF');
+            };
+        }
+
+        // Add event listeners for pan and zoom
+        container.addEventListener('wheel', handleWheel, { passive: false });
+        
+        // Pan event listeners on both container and overlay
+        container.addEventListener('mousedown', handleMouseDown);
+        overlay.addEventListener('mousedown', handleMouseDown);
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        
+        // Touch events for mobile
+        container.addEventListener('touchstart', handleTouchStart, { passive: false });
+        overlay.addEventListener('touchstart', handleTouchStart, { passive: false });
+        container.addEventListener('touchmove', handleTouchMove, { passive: false });
+        container.addEventListener('touchend', handleTouchEnd);
+        
+        // Prevent context menu on right click for better UX
+        container.addEventListener('contextmenu', function(e) {
+            if (currentZoom > 1.0) {
+                e.preventDefault();
+            }
+        });
+        
+        // Disable text selection during pan
+        container.addEventListener('selectstart', function(e) {
+            if (isPanning) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Handle keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+P for print
+        if (e.ctrlKey && e.key === 'p') {
+            e.preventDefault();
+            printPDF();
+        }
+        // Ctrl+H for home/dashboard
+        if (e.ctrlKey && e.key === 'h') {
+            e.preventDefault();
+            window.location.href = '{{ url_for("index") }}';
+        }
+        // Plus/Minus for zoom
+        if (e.ctrlKey && e.key === '=') {
+            e.preventDefault();
+            zoomIn();
+        }
+        if (e.ctrlKey && e.key === '-') {
+            e.preventDefault();
+            zoomOut();
+        }
+        // Ctrl+0 for reset zoom
+        if (e.ctrlKey && e.key === '0') {
+            e.preventDefault();
+            resetZoom();
+        }
+        // Arrow keys for pan when zoomed
+        if (currentZoom > 1.0) {
+            const step = 50;
+            switch(e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    currentY += step;
+                    updateZoom();
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    currentY -= step;
+                    updateZoom();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    currentX += step;
+                    updateZoom();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    currentX -= step;
+                    updateZoom();
+                    break;
+            }
+        }
+    });
+    </script>
+</body>
+</html>
