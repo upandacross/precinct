@@ -41,7 +41,7 @@ If Dash packages are not installed:
 - The main Flask app continues to work normally
 
 ## Files Added
-- `dash_analytics.py` - Main Dash application with all charts
+- ~~`dash_analytics.py` - Main Dash application with all charts~~ (Removed - replaced with PDF viewer)
 - `dash_requirements.txt` - Required packages for Dash functionality
 - `install_dash.sh` - Automatic installation script
 
@@ -59,4 +59,6 @@ If Dash packages are not installed:
 5. **Recent Activity Trends** (Multi-line Chart) - Logins vs Registrations comparison
 
 ## Customization
-To add more charts or modify existing ones, edit the `dash_analytics.py` file and add new figures to the layout.
+~~To add more charts or modify existing ones, edit the `dash_analytics.py` file and add new figures to the layout.~~ 
+
+**Note**: The Dash analytics functionality has been replaced with a PDF viewer. Analytics are now displayed via the `pdf_viewer.html` template which shows the Dash.pdf file with full-screen, pan, and zoom capabilities.
