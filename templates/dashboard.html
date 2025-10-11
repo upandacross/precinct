@@ -23,7 +23,11 @@
                     <p><strong>Account Type:</strong> 
                         {% if user.is_admin %}
                             <span class="badge bg-danger">Administrator</span>
-                        {% else %}
+                        {% endif %}
+                        {% if user.is_county %}
+                            <span class="badge bg-warning">County</span>
+                        {% endif %}
+                        {% if not user.is_admin and not user.is_county %}
                             <span class="badge bg-primary">User</span>
                         {% endif %}
                     </p>
@@ -57,7 +61,7 @@
                             </div>
                         {% endif %}
                         
-                        {% if user.is_admin or user.is_county() %}
+                        {% if user.is_admin or user.is_county %}
                             <a href="{{ url_for('static_content') }}" class="btn btn-outline-success">
                                 <i class="fas fa-map"></i> Maps List
                             </a>

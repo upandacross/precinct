@@ -97,6 +97,16 @@
                                     </td>
                                 </tr>
                                 <tr>
+                                    <td><strong>County Privileges:</strong></td>
+                                    <td>
+                                        {% if user.is_county %}
+                                            <span class="text-success"><i class="fas fa-check"></i> Yes</span>
+                                        {% else %}
+                                            <span class="text-muted"><i class="fas fa-times"></i> No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
                                     <td><strong>Member Since:</strong></td>
                                     <td>{{ user.created_at.strftime('%B %d, %Y') }}</td>
                                 </tr>

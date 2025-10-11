@@ -39,12 +39,12 @@ class UserModelView(SecureModelView):
     """Custom model view for User management."""
     column_exclude_list = ['password_hash']
     column_searchable_list = ['username', 'email', 'password', 'phone', 'role', 'precinct', 'state', 'county']
-    column_filters = ['is_admin', 'is_active', 'created_at', 'role', 'precinct', 'state', 'county']
+    column_filters = ['is_admin', 'is_county', 'is_active', 'created_at', 'role', 'precinct', 'state', 'county']
     form_excluded_columns = ['password_hash', 'created_at', 'last_login']
-    column_details_list = ['id', 'username', 'email', 'password', 'phone', 'role', 'precinct', 'state', 'county', 'map', 'notes', 'is_admin', 'is_active', 'created_at', 'last_login']
+    column_details_list = ['id', 'username', 'email', 'password', 'phone', 'role', 'precinct', 'state', 'county', 'map', 'notes', 'is_admin', 'is_county', 'is_active', 'created_at', 'last_login']
     
     # Define form field order - username first, then password as unique field, followed by contact and role info
-    form_columns = ['username', 'email', 'password', 'phone', 'role', 'precinct', 'state', 'county', 'map', 'notes', 'is_admin', 'is_active']
+    form_columns = ['username', 'email', 'password', 'phone', 'role', 'precinct', 'state', 'county', 'map', 'notes', 'is_admin', 'is_county', 'is_active']
     
     def on_model_change(self, form, model, is_created):
         """Hash password when creating or updating user."""
@@ -167,7 +167,7 @@ def create_app():
     @login_required
     def static_content():
         """Display list of available maps. Admin and county access."""
-        if not (current_user.is_admin or current_user.is_county()):
+        if not (current_user.is_admin or current_user.is_county):
             flash('Access denied. Maps are available to administrators and county users only.', 'error')
             return redirect(url_for('index'))
         static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])

@@ -16,6 +16,7 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    is_county = db.Column(db.Boolean, default=False, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
@@ -27,12 +28,13 @@ class User(UserMixin, db.Model):
     map = db.Column(db.String(255), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     
-    def __init__(self, username, email, password, is_admin=False, phone=None, role=None, precinct=None, state=None, county=None, map=None, notes=None):
+    def __init__(self, username, email, password, is_admin=False, is_county=False, phone=None, role=None, precinct=None, state=None, county=None, map=None, notes=None):
         self.username = username
         self.email = email
         self.password = password
         self.set_password(password)
         self.is_admin = is_admin
+        self.is_county = is_county
         self.phone = phone
         self.role = role
         self.precinct = precinct
@@ -61,9 +63,7 @@ class User(UserMixin, db.Model):
         """Return False since this is not an anonymous user."""
         return False
     
-    def is_county(self):
-        """Return True if the user's role is 'County'."""
-        return self.role == 'County'
+
     
     def __repr__(self):
         return f'<User {self.username}>'
