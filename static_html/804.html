@@ -50,6 +50,72 @@
             </script>
 
         
+
+    
+
+    <style>
+        .leaflet-replacement-zoom-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .leaflet-zoom-btn {
+            width: 34px;
+            height: 34px;
+            background: white;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+            user-select: none;
+            transition: all 0.1s ease;
+            text-decoration: none;
+            color: #333;
+        }
+        
+        .leaflet-zoom-btn:hover {
+            background: #f4f4f4;
+            border-color: rgba(0,0,0,0.4);
+        }
+        
+        .leaflet-zoom-btn:active {
+            background: #e6e6e6;
+        }
+        
+        .leaflet-zoom-btn.leaflet-disabled {
+            background: #f9f9f9;
+            color: #bbb;
+            cursor: default;
+        }
+        
+        .leaflet-zoom-btn.leaflet-disabled:hover {
+            background: #f9f9f9;
+            border-color: rgba(0,0,0,0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .leaflet-replacement-zoom-controls {
+                top: 10px;
+                left: 10px;
+            }
+            
+            .leaflet-zoom-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 16px;
+            }
+        }
+    </style>
 </head>
 <body>
     
@@ -66,7 +132,18 @@
     </div>
     
     
-            <div class="folium-map" id="map_dad359a0ab5784bed51c8760f5a2d142" ></div>
+            
+    
+        <div class="zoom-btn zoom-out-btn" onclick="zoomOut()" title="Zoom Out">−</div>
+        <div class="zoom-btn zoom-reset-btn" onclick="resetZoom()" title="Reset Zoom">Reset</div>
+    </div>
+    
+    <!-- Custom Leaflet Replacement Zoom Controls -->
+    <div class="leaflet-replacement-zoom-controls">
+        <div class="leaflet-zoom-btn" onclick="customZoomIn()" title="Zoom in">+</div>
+        <div class="leaflet-zoom-btn" onclick="customZoomOut()" title="Zoom out">−</div>
+    </div>
+    <div class="folium-map" id="map_dad359a0ab5784bed51c8760f5a2d142" ></div>
         
 </body>
 <script>
@@ -79,7 +156,7 @@
                     crs: L.CRS.EPSG3857,
                     ...{
   "zoom": 15,
-  "zoomControl": true,
+  "zoomControl": false,
   "preferCanvas": false,
 }
 
@@ -638,4 +715,110 @@
             );
         
 </script>
+
+    <script>
+        // Custom zoom functions
+        function zoomIn() {
+            if (typeof map_dad359a0ab5784bed51c8760f5a2d142 !== 'undefined') {
+                map_dad359a0ab5784bed51c8760f5a2d142.zoomIn(1);
+            }
+        }
+        
+        function zoomOut() {
+            if (typeof map_dad359a0ab5784bed51c8760f5a2d142 !== 'undefined') {
+                map_dad359a0ab5784bed51c8760f5a2d142.zoomOut(1);
+            }
+        }
+        
+        function resetZoom() {
+            if (typeof map_dad359a0ab5784bed51c8760f5a2d142 !== 'undefined') {
+                // Get the original bounds from the fitBounds call
+                const bounds = map_dad359a0ab5784bed51c8760f5a2d142.getBounds();
+                map_dad359a0ab5784bed51c8760f5a2d142.fitBounds(bounds);
+            }
+        }
+        
+        // Keyboard shortcuts for zoom
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === '=' || e.key === '+') {
+                    e.preventDefault();
+                    zoomIn();
+                } else if (e.key === '-') {
+                    e.preventDefault();
+                    zoomOut();
+                } else if (e.key === '0') {
+                    e.preventDefault();
+                    resetZoom();
+                }
+            }
+        });
+        
+        // Listen for zoom commands from parent window
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.action) {
+                switch(event.data.action) {
+                    case 'zoomIn':
+                        zoomIn();
+                        break;
+                    case 'zoomOut':
+                        zoomOut();
+                        break;
+                    case 'resetZoom':
+                        resetZoom();
+                        break;
+                }
+            }
+        });
+    </script>
+
+    <script>
+        // Custom zoom functions to replace Leaflet controls
+        function customZoomIn() {
+            if (typeof map_dad359a0ab5784bed51c8760f5a2d142 !== 'undefined') {
+                map_dad359a0ab5784bed51c8760f5a2d142.zoomIn(1);
+                updateZoomButtonStates();
+            }
+        }
+        
+        function customZoomOut() {
+            if (typeof map_dad359a0ab5784bed51c8760f5a2d142 !== 'undefined') {
+                map_dad359a0ab5784bed51c8760f5a2d142.zoomOut(1);
+                updateZoomButtonStates();
+            }
+        }
+        
+        function updateZoomButtonStates() {
+            if (typeof map_dad359a0ab5784bed51c8760f5a2d142 !== 'undefined') {
+                const currentZoom = map_dad359a0ab5784bed51c8760f5a2d142.getZoom();
+                const minZoom = map_dad359a0ab5784bed51c8760f5a2d142.getMinZoom();
+                const maxZoom = map_dad359a0ab5784bed51c8760f5a2d142.getMaxZoom();
+                
+                const zoomInBtn = document.querySelector('.leaflet-replacement-zoom-controls .leaflet-zoom-btn:first-child');
+                const zoomOutBtn = document.querySelector('.leaflet-replacement-zoom-controls .leaflet-zoom-btn:last-child');
+                
+                // Disable/enable zoom in button
+                if (currentZoom >= maxZoom) {
+                    zoomInBtn.classList.add('leaflet-disabled');
+                } else {
+                    zoomInBtn.classList.remove('leaflet-disabled');
+                }
+                
+                // Disable/enable zoom out button
+                if (currentZoom <= minZoom) {
+                    zoomOutBtn.classList.add('leaflet-disabled');
+                } else {
+                    zoomOutBtn.classList.remove('leaflet-disabled');
+                }
+            }
+        }
+        
+        // Initialize button states when map is ready
+        if (typeof map_dad359a0ab5784bed51c8760f5a2d142 !== 'undefined') {
+            map_dad359a0ab5784bed51c8760f5a2d142.on('zoomend', updateZoomButtonStates);
+            map_dad359a0ab5784bed51c8760f5a2d142.whenReady(function() {
+                updateZoomButtonStates();
+            });
+        }
+    </script>
 </html>

@@ -260,19 +260,17 @@ def create_app():
         if not os.path.exists(file_path) or not filename.endswith('.html'):
             abort(404)
         
-        # For non-admin users, check if they have access to this specific file
-        # (either it's their assigned map or it's a public file)
-        if not current_user.is_admin:
-            # Allow access if it's the user's assigned map
+        # Check access permissions: admin, county users, or user's assigned map
+        if not (current_user.is_admin or current_user.is_county):
+            # Regular users can only view their assigned map
             if current_user.map != filename:
-                # For now, allow all authenticated users to view any static content
-                # This can be restricted later if needed
-                pass
+                flash('Access denied. You can only view your assigned map.', 'error')
+                return redirect(url_for('index'))
         
         return render_template('static_viewer.html', 
                              filename=filename,
                              display_name=filename.replace('.html', '').replace('_', ' ').title(),
-                             is_public_view=not current_user.is_admin)
+                             is_public_view=not (current_user.is_admin or current_user.is_county))
     
     @app.route('/static-content-raw/<filename>')
     @login_required
@@ -344,12 +342,27 @@ function closeWindow() {
 </script>
             '''
             
-            # Insert close button after the opening <body> tag
+            # Enhanced zoom controls for new tab view
+            enhanced_zoom_controls = '''
+<!-- Enhanced Zoom Controls for New Tab -->
+<div class="new-tab-zoom-controls" style="position: fixed; top: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;">'
+    <div style="background: rgba(255,255,255,0.95); padding: 12px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 2px solid #007bff;">
+        <div style="text-align: center; margin-bottom: 8px; font-weight: bold; color: #007bff; font-size: 12px;">ZOOM CONTROLS</div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+            <button onclick="zoomIn()" style="width: 60px; height: 35px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#218838'" onmouseout="this.style.backgroundColor='#28a745'" title="Zoom In (Ctrl/Cmd + Plus)">+</button>
+            <button onclick="zoomOut()" style="width: 60px; height: 35px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#c82333'" onmouseout="this.style.backgroundColor='#dc3545'" title="Zoom Out (Ctrl/Cmd + Minus)">−</button>
+            <button onclick="resetZoom()" style="width: 60px; height: 30px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'" title="Reset Zoom (Ctrl/Cmd + 0)">Reset</button>
+        </div>
+    </div>
+</div>
+            '''
+            
+            # Insert close button and zoom controls after the opening <body> tag
             if '<body>' in content:
-                content = content.replace('<body>', '<body>' + close_button)
+                content = content.replace('<body>', '<body>' + close_button + enhanced_zoom_controls)
             else:
                 # If no <body> tag found, add it at the beginning
-                content = close_button + content
+                content = close_button + enhanced_zoom_controls + content
             
             return content
         except Exception as e:

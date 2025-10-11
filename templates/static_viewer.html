@@ -126,6 +126,33 @@
 
         <div class="card mt-3">
             <div class="card-header">
+                <h5><i class="fas fa-search-plus"></i> Map Controls</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button onclick="zoomInMap()" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-search-plus"></i> Zoom In
+                    </button>
+                    <button onclick="zoomOutMap()" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-search-minus"></i> Zoom Out
+                    </button>
+                    <button onclick="resetMapZoom()" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-crosshairs"></i> Reset Zoom
+                    </button>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-keyboard"></i> Keyboard shortcuts:<br>
+                            Ctrl/Cmd + Plus: Zoom In<br>
+                            Ctrl/Cmd + Minus: Zoom Out<br>
+                            Ctrl/Cmd + 0: Reset Zoom
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
                 <h5><i class="fas fa-info-circle"></i> Document Info</h5>
             </div>
             <div class="card-body">
@@ -192,6 +219,51 @@ function toggleFullscreen() {
     } else {
         wrapper.classList.add('fullscreen');
         btn.innerHTML = '<i class="fas fa-compress"></i> Exit Fullscreen';
+    }
+}
+
+function zoomInMap() {
+    const iframe = document.querySelector('iframe');
+    if (iframe && iframe.contentWindow) {
+        try {
+            iframe.contentWindow.postMessage({action: 'zoomIn'}, '*');
+        } catch (e) {
+            console.log('Direct zoom control not available, trying alternative method');
+            // Fallback: try to access iframe's zoom functions directly
+            if (iframe.contentWindow.zoomIn) {
+                iframe.contentWindow.zoomIn();
+            }
+        }
+    }
+}
+
+function zoomOutMap() {
+    const iframe = document.querySelector('iframe');
+    if (iframe && iframe.contentWindow) {
+        try {
+            iframe.contentWindow.postMessage({action: 'zoomOut'}, '*');
+        } catch (e) {
+            console.log('Direct zoom control not available, trying alternative method');
+            // Fallback: try to access iframe's zoom functions directly
+            if (iframe.contentWindow.zoomOut) {
+                iframe.contentWindow.zoomOut();
+            }
+        }
+    }
+}
+
+function resetMapZoom() {
+    const iframe = document.querySelector('iframe');
+    if (iframe && iframe.contentWindow) {
+        try {
+            iframe.contentWindow.postMessage({action: 'resetZoom'}, '*');
+        } catch (e) {
+            console.log('Direct zoom control not available, trying alternative method');
+            // Fallback: try to access iframe's zoom functions directly
+            if (iframe.contentWindow.resetZoom) {
+                iframe.contentWindow.resetZoom();
+            }
+        }
     }
 }
 
