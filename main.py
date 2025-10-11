@@ -314,13 +314,33 @@ def create_app():
             # Add a close window button to the map content
             close_button = '''
 <div style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
-    <button onclick="window.close()" 
+    <button onclick="closeWindow()" 
        style="background: #dc3545; color: white; padding: 8px 16px; border: none; 
               border-radius: 4px; font-family: Arial, sans-serif; font-size: 14px;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.2); cursor: pointer; display: inline-block;">
-        <i class="fas fa-times"></i> Close Window
+              box-shadow: 0 2px 4px rgba(0,0,0,0.2); cursor: pointer; display: inline-block;
+              transition: background-color 0.2s;"
+       onmouseover="this.style.backgroundColor='#c82333'"
+       onmouseout="this.style.backgroundColor='#dc3545'">
+        ✕ Close Window
     </button>
 </div>
+<script>
+function closeWindow() {
+    // Try to close the window
+    if (window.opener) {
+        window.close();
+    } else {
+        // If not opened by another window, try alternative methods
+        if (confirm('Close this tab?')) {
+            window.close();
+            // Fallback for browsers that don't allow window.close()
+            setTimeout(function() {
+                window.location.href = 'about:blank';
+            }, 100);
+        }
+    }
+}
+</script>
             '''
             
             # Insert close button after the opening <body> tag

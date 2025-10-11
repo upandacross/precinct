@@ -100,10 +100,17 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <a href="{{ url_for('view_static_content_raw', filename=filename) }}" 
-                       target="_blank" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-external-link-alt"></i> In New Tab
-                    </a>
+                    {% if is_user_map %}
+                        <a href="{{ url_for('view_file_new_tab', filename=filename) }}" 
+                           target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> New Tab
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('view_file_new_tab', filename=filename) }}" 
+                           target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> New Tab
+                        </a>
+                    {% endif %}
                     <button onclick="printIframe()" class="btn btn-sm btn-outline-dark">
                         <i class="fas fa-print"></i> Print Document
                     </button>
