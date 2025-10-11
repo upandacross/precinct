@@ -330,13 +330,11 @@ function closeWindow() {
         window.close();
     } else {
         // If not opened by another window, try alternative methods
-        if (confirm('Close this tab?')) {
-            window.close();
-            // Fallback for browsers that don't allow window.close()
-            setTimeout(function() {
-                window.location.href = 'about:blank';
-            }, 100);
-        }
+        window.close();
+        // Fallback for browsers that don't allow window.close()
+        setTimeout(function() {
+            window.location.href = 'about:blank';
+        }, 100);
     }
 }
 </script>
@@ -345,9 +343,8 @@ function closeWindow() {
             # Enhanced zoom controls for new tab view
             enhanced_zoom_controls = '''
 <!-- Enhanced Zoom Controls for New Tab -->
-<div class="new-tab-zoom-controls" style="position: fixed; top: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;">'
-    <div style="background: rgba(255,255,255,0.95); padding: 12px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 2px solid #007bff;">
-        <div style="text-align: center; margin-bottom: 8px; font-weight: bold; color: #007bff; font-size: 12px;">ZOOM CONTROLS</div>
+<div class="new-tab-zoom-controls" style="position: fixed; top: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;">
+    <div style="background: rgba(255,255,255,0.95); padding: 8px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 2px solid #007bff;">
         <div style="display: flex; flex-direction: column; gap: 4px;">
             <button onclick="zoomIn()" style="width: 60px; height: 35px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#218838'" onmouseout="this.style.backgroundColor='#28a745'" title="Zoom In (Ctrl/Cmd + Plus)">+</button>
             <button onclick="zoomOut()" style="width: 60px; height: 35px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#c82333'" onmouseout="this.style.backgroundColor='#dc3545'" title="Zoom Out (Ctrl/Cmd + Minus)">−</button>
@@ -392,7 +389,7 @@ function closeWindow() {
     @app.route('/user-map-raw/<filename>')
     @login_required
     def view_user_map_raw(filename):
-        """Serve raw HTML file content for user's map iframe display."""
+        """Serve raw HTML file content for user's map iframe display with zoom control support."""
         static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
         file_path = os.path.join(static_html_dir, filename)
         
@@ -404,10 +401,68 @@ function closeWindow() {
         if current_user.map != filename and not current_user.is_admin:
             return '<html><body><h1>Access Denied</h1><p>You can only view your assigned map.</p></body></html>', 403
         
-        # Read and serve the raw HTML content
+        # Read and serve the raw HTML content with zoom control support
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
+            
+            # Add message listener for zoom controls to work with sidebar
+            zoom_message_listener = '''
+<script>
+// Message listener for sidebar zoom controls
+window.addEventListener('message', function(event) {
+    if (event.data && event.data.action) {
+        switch(event.data.action) {
+            case 'zoomIn':
+                if (window.map && window.map.zoomIn) {
+                    window.map.zoomIn();
+                }
+                break;
+            case 'zoomOut':
+                if (window.map && window.map.zoomOut) {
+                    window.map.zoomOut();
+                }
+                break;
+            case 'resetZoom':
+                if (window.map && window.map.setView) {
+                    // Reset to initial map view - you may need to adjust these coordinates
+                    window.map.setView([39.8283, -98.5795], 4); // Default US center view
+                }
+                break;
+        }
+    }
+});
+
+// Make map globally accessible for zoom controls
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait for Leaflet map to be initialized
+    setTimeout(function() {
+        // Try to find the map instance
+        if (typeof map !== 'undefined') {
+            window.map = map;
+        } else {
+            // If map variable not found, try to find it in the window object
+            for (let key in window) {
+                if (window[key] && typeof window[key] === 'object' && 
+                    window[key].hasOwnProperty('_container') && 
+                    window[key]._container && window[key]._container.classList.contains('leaflet-container')) {
+                    window.map = window[key];
+                    break;
+                }
+            }
+        }
+    }, 1000);
+});
+</script>
+            '''
+            
+            # Insert message listener before closing </body> tag
+            if '</body>' in content:
+                content = content.replace('</body>', zoom_message_listener + '</body>')
+            else:
+                # If no </body> tag found, add it at the end
+                content = content + zoom_message_listener
+            
             return content
         except Exception as e:
             return f'<html><body><h1>Error</h1><p>Error reading file: {str(e)}</p></body></html>', 500
