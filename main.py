@@ -121,8 +121,9 @@ def create_app():
                 
                 # Redirect to next page or dashboard
                 next_page = request.args.get('next')
-                if next_page:
+                if next_page and next_page != url_for('about'):
                     return redirect(next_page)
+                # Always redirect to dashboard for successful login
                 return redirect(url_for('index'))
             else:
                 flash('Invalid username or password', 'error')
