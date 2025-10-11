@@ -238,8 +238,65 @@ function printIframe() {
     const iframe = document.querySelector('iframe');
     if (iframe && iframe.contentWindow) {
         try {
-            iframe.contentWindow.print();
+            // Inject print-specific CSS to fit map to page width
+            const printCSS = `
+                <style id="print-fit-css" media="print">
+                    @page {
+                        margin: 0.5in;
+                        size: landscape;
+                    }
+                    
+                    body {
+                        margin: 0;
+                        padding: 0;
+                    }
+                    
+                    .leaflet-container {
+                        width: 100% !important;
+                        height: 7in !important;
+                        max-width: 100% !important;
+                        page-break-inside: avoid;
+                    }
+                    
+                    .folium-map {
+                        width: 100% !important;
+                        height: 7in !important;
+                        max-width: 100% !important;
+                    }
+                    
+                    /* Hide any overlay controls during print */
+                    .leaflet-control-container,
+                    .leaflet-popup,
+                    .leaflet-tooltip {
+                        display: none !important;
+                    }
+                    
+                    /* Ensure legend and other info remain visible */
+                    div[style*="position: absolute"][style*="bottom"] {
+                        position: relative !important;
+                        bottom: auto !important;
+                        margin-top: 10px;
+                    }
+                </style>
+            `;
+            
+            // Inject the print CSS into iframe
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const existingPrintCSS = iframeDoc.getElementById('print-fit-css');
+            if (!existingPrintCSS) {
+                iframeDoc.head.insertAdjacentHTML('beforeend', printCSS);
+            }
+            
+            // Trigger map resize to fit new dimensions before printing
+            iframe.contentWindow.postMessage({action: 'preparePrint'}, '*');
+            
+            // Give a moment for map to resize, then print
+            setTimeout(() => {
+                iframe.contentWindow.print();
+            }, 500);
+            
         } catch (e) {
+            console.log('Print from iframe failed, opening in new window');
             // If printing from iframe fails, open in new window and print
             window.open('{{ url_for("view_static_content_raw", filename=filename) }}', '_blank');
         }

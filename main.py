@@ -286,10 +286,73 @@ def create_app():
         if not os.path.exists(file_path) or not filename.endswith('.html'):
             abort(404)
         
-        # Read and serve the raw HTML content
+        # Read and serve the raw HTML content with message listener support
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
+            
+            # Add message listener for sidebar controls (zoom and print)
+            message_listener = '''
+<script>
+// Message listener for sidebar controls
+window.addEventListener('message', function(event) {
+    if (event.data && event.data.action) {
+        switch(event.data.action) {
+            case 'zoomIn':
+                if (window.map && window.map.zoomIn) {
+                    window.map.zoomIn();
+                }
+                break;
+            case 'zoomOut':
+                if (window.map && window.map.zoomOut) {
+                    window.map.zoomOut();
+                }
+                break;
+            case 'resetZoom':
+                if (window.map && window.map.setView) {
+                    // Reset to initial map view
+                    window.map.setView([39.8283, -98.5795], 4);
+                }
+                break;
+            case 'preparePrint':
+                if (window.map && window.map.invalidateSize) {
+                    // Resize map to fit container for print layout
+                    setTimeout(function() {
+                        window.map.invalidateSize();
+                    }, 100);
+                }
+                break;
+        }
+    }
+});
+
+// Make map globally accessible for controls
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        if (typeof map !== 'undefined') {
+            window.map = map;
+        } else {
+            for (let key in window) {
+                if (window[key] && typeof window[key] === 'object' && 
+                    window[key].hasOwnProperty('_container') && 
+                    window[key]._container && window[key]._container.classList.contains('leaflet-container')) {
+                    window.map = window[key];
+                    break;
+                }
+            }
+        }
+    }, 1000);
+});
+</script>
+            '''
+            
+            # Insert message listener before closing </body> tag
+            if '</body>' in content:
+                content = content.replace('</body>', message_listener + '</body>')
+            else:
+                # If no </body> tag found, add it at the end
+                content = content + message_listener
+            
             return content
         except Exception as e:
             return f'<html><body><h1>Error</h1><p>Error reading file: {str(e)}</p></body></html>', 500
@@ -340,6 +403,50 @@ function closeWindow() {
 </script>
             '''
             
+            # Print CSS for new tab view
+            print_css = '''
+<style media="print">
+    @page {
+        margin: 0.5in;
+        size: landscape;
+    }
+    
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    
+    .leaflet-container {
+        width: 100% !important;
+        height: 7in !important;
+        max-width: 100% !important;
+        page-break-inside: avoid;
+    }
+    
+    .folium-map {
+        width: 100% !important;
+        height: 7in !important;
+        max-width: 100% !important;
+    }
+    
+    /* Hide controls during print */
+    .new-tab-zoom-controls,
+    .leaflet-control-container,
+    .leaflet-popup,
+    .leaflet-tooltip,
+    button[onclick*="close"] {
+        display: none !important;
+    }
+    
+    /* Ensure legend remains visible */
+    div[style*="position: absolute"][style*="bottom"] {
+        position: relative !important;
+        bottom: auto !important;
+        margin-top: 10px;
+    }
+</style>
+            '''
+
             # Enhanced zoom controls for new tab view
             enhanced_zoom_controls = '''
 <!-- Enhanced Zoom Controls for New Tab -->
@@ -354,12 +461,15 @@ function closeWindow() {
 </div>
             '''
             
-            # Insert close button and zoom controls after the opening <body> tag
+            # Insert print CSS in head, close button and zoom controls after the opening <body> tag
+            if '<head>' in content:
+                content = content.replace('<head>', '<head>' + print_css)
+            
             if '<body>' in content:
                 content = content.replace('<body>', '<body>' + close_button + enhanced_zoom_controls)
             else:
                 # If no <body> tag found, add it at the beginning
-                content = close_button + enhanced_zoom_controls + content
+                content = print_css + close_button + enhanced_zoom_controls + content
             
             return content
         except Exception as e:
@@ -427,6 +537,14 @@ window.addEventListener('message', function(event) {
                 if (window.map && window.map.setView) {
                     // Reset to initial map view - you may need to adjust these coordinates
                     window.map.setView([39.8283, -98.5795], 4); // Default US center view
+                }
+                break;
+            case 'preparePrint':
+                if (window.map && window.map.invalidateSize) {
+                    // Resize map to fit container for print layout
+                    setTimeout(function() {
+                        window.map.invalidateSize();
+                    }, 100);
                 }
                 break;
         }
