@@ -1,5 +1,13 @@
 {% extends 'admin/base.html' %}
 
+{% block brand %}
+<a href="{{ url_for('index') }}">{{ admin_view.admin.name }}</a>
+{% endblock %}
+
+{% block main_menu %}
+{{ super() }}
+{% endblock %}
+
 {% block head_css %}
     {{ super() }}
     <!-- Custom CSS to match main app styling -->
