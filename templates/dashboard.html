@@ -51,14 +51,9 @@
                                 <a href="{{ url_for('view_user_map', filename=user.map) }}" class="btn btn-outline-success">
                                     <i class="fas fa-map"></i> View My Map
                                 </a>
-                                <button type="button" class="btn btn-outline-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
-                                    <span class="visually-hidden">Toggle Dropdown</span>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ url_for('view_file_new_tab', filename=user.map) }}" target="_blank">
-                                        <i class="fas fa-external-link-alt"></i> Open in New Tab
-                                    </a></li>
-                                </ul>
+                                <a href="{{ url_for('view_file_new_tab', filename=user.map) }}" target="_blank" class="btn btn-outline-success">
+                                    <i class="fas fa-external-link-alt"></i> New Tab
+                                </a>
                             </div>
                         {% endif %}
                         

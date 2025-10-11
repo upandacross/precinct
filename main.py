@@ -298,7 +298,7 @@ def create_app():
     @app.route('/view/<filename>')
     @login_required
     def view_file_new_tab(filename):
-        """Open static HTML file directly in new tab. Available to all authenticated users."""
+        """Open static HTML file directly in new tab with close button. Available to all authenticated users."""
         static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
         file_path = os.path.join(static_html_dir, filename)
         
@@ -306,10 +306,30 @@ def create_app():
         if not os.path.exists(file_path) or not filename.endswith('.html'):
             abort(404)
         
-        # Read and serve the raw HTML content directly
+        # Read and serve the raw HTML content with close button
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
+            
+            # Add a close window button to the map content
+            close_button = '''
+<div style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
+    <button onclick="window.close()" 
+       style="background: #dc3545; color: white; padding: 8px 16px; border: none; 
+              border-radius: 4px; font-family: Arial, sans-serif; font-size: 14px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.2); cursor: pointer; display: inline-block;">
+        <i class="fas fa-times"></i> Close Window
+    </button>
+</div>
+            '''
+            
+            # Insert close button after the opening <body> tag
+            if '<body>' in content:
+                content = content.replace('<body>', '<body>' + close_button)
+            else:
+                # If no <body> tag found, add it at the beginning
+                content = close_button + content
+            
             return content
         except Exception as e:
             return f'<html><body><h1>Error</h1><p>Error reading file: {str(e)}</p></body></html>', 500
