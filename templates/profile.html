@@ -48,6 +48,18 @@
                                     <td>{{ user.precinct }}</td>
                                 </tr>
                                 {% endif %}
+                                {% if user.state %}
+                                <tr>
+                                    <td><strong>State:</strong></td>
+                                    <td>{{ user.state }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if user.county %}
+                                <tr>
+                                    <td><strong>County:</strong></td>
+                                    <td>{{ user.county }}</td>
+                                </tr>
+                                {% endif %}
                                 {% if user.map %}
                                 <tr>
                                     <td><strong>Map:</strong></td>

@@ -22,10 +22,12 @@ class User(UserMixin, db.Model):
     phone = db.Column(db.String(20), nullable=True)
     role = db.Column(db.String(100), nullable=True)
     precinct = db.Column(db.String(100), nullable=True)
+    state = db.Column(db.String(50), nullable=True)
+    county = db.Column(db.String(100), nullable=True)
     map = db.Column(db.String(255), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     
-    def __init__(self, username, email, password, is_admin=False, phone=None, role=None, precinct=None, map=None, notes=None):
+    def __init__(self, username, email, password, is_admin=False, phone=None, role=None, precinct=None, state=None, county=None, map=None, notes=None):
         self.username = username
         self.email = email
         self.password = password
@@ -34,6 +36,8 @@ class User(UserMixin, db.Model):
         self.phone = phone
         self.role = role
         self.precinct = precinct
+        self.state = state
+        self.county = county
         self.map = map
         self.notes = notes
     
