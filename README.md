@@ -1,4 +1,4 @@
-# Flask Admin App with Login & User Management
+# Precinct Member's Application with Login & User Management
     - by Claude Sonnet 4
 A complete Flask web application featuring user authentication, encrypted passwords, and administrative user management using Flask-Login and Flask-Admin.
 
