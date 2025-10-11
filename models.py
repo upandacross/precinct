@@ -57,6 +57,10 @@ class User(UserMixin, db.Model):
         """Return False since this is not an anonymous user."""
         return False
     
+    def is_county(self):
+        """Return True if the user's role is 'County'."""
+        return self.role == 'County'
+    
     def __repr__(self):
         return f'<User {self.username}>'
     
