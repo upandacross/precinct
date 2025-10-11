@@ -57,14 +57,19 @@
                             </div>
                         {% endif %}
                         
-                        {% if user.is_admin %}
+                        {% if user.is_admin or user.is_county() %}
                             <a href="{{ url_for('static_content') }}" class="btn btn-outline-success">
-                                <i class="fas fa-file-alt"></i> Static Content
+                                <i class="fas fa-map"></i> Maps List
                             </a>
+                        {% endif %}
+                        
+                        {% if user.is_admin %}
                             <a href="/admin/user" class="btn btn-outline-warning">
                                 <i class="fas fa-users-cog"></i> Manage Users
                             </a>
-                        {% else %}
+                        {% endif %}
+                        
+                        {% if not user.is_admin %}
                             <a href="{{ url_for('analysis') }}" class="btn btn-outline-info">
                                 <i class="fas fa-chart-line"></i> Precinct Analytics
                             </a>

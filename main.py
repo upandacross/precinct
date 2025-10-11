@@ -166,9 +166,9 @@ def create_app():
     @app.route('/static-content')
     @login_required
     def static_content():
-        """Display list of available static HTML files. Admin access only."""
-        if not current_user.is_admin:
-            flash('Access denied. Static content is available to administrators only.', 'error')
+        """Display list of available maps. Admin and county access."""
+        if not (current_user.is_admin or current_user.is_county()):
+            flash('Access denied. Maps are available to administrators and county users only.', 'error')
             return redirect(url_for('index'))
         static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
         
