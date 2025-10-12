@@ -40,6 +40,11 @@ class Config:
     STATIC_HTML_DIR = 'static_html'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file upload
     
+    # Default Admin User Configuration
+    DEFAULT_ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
+    DEFAULT_ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'brenvoice@gmail.com')
+    DEFAULT_ADMIN_PASSWORD = os.environ.get('SECRET', '!1OkslCZtBBPCHRG!')  # Use SECRET env var
+    
     # Rate Limiting Configuration
     RATELIMIT_STORAGE_URL = "memory://"  # Use in-memory storage for rate limiting
     RATELIMIT_DEFAULT = "200 per day, 50 per hour"  # Default rate limits

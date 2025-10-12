@@ -15,22 +15,22 @@ def init_db():
         db.create_all()
         print("Database tables created successfully.")
         
-        # Check if admin user exists
-        admin_user = User.query.filter_by(username='admin').first()
+        # Check if admin user exists  
+        admin_user = User.query.filter_by(username=app.config['DEFAULT_ADMIN_USERNAME']).first()
         if not admin_user:
-            # Create default admin user
+            # Create default admin user using config variables
             admin_user = User(
-                username='admin',
-                email='admin@example.com',
-                password='admin123',  # This will be hashed automatically
+                username=app.config['DEFAULT_ADMIN_USERNAME'],
+                email=app.config['DEFAULT_ADMIN_EMAIL'],
+                password=app.config['DEFAULT_ADMIN_PASSWORD'],  # Uses SECRET env var
                 is_admin=True,
                 is_active=True
             )
             db.session.add(admin_user)
             db.session.commit()
-            print("Default admin user created: admin/admin123")
+            print(f"Default admin user created: {app.config['DEFAULT_ADMIN_USERNAME']}/{app.config['DEFAULT_ADMIN_PASSWORD']}")
         else:
-            print("Admin user already exists.")
+            pass
 
 if __name__ == '__main__':
     init_db()

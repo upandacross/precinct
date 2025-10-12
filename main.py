@@ -208,8 +208,6 @@ def create_app():
                 session['last_activity'] = datetime.utcnow().isoformat()
                 session.permanent = True
                 
-                flash(f'Welcome back, {user.username}!', 'success')
-                
                 # Redirect to next page or dashboard
                 next_page = request.args.get('next')
                 if next_page and next_page != url_for('about'):
