@@ -16,6 +16,8 @@
                             <h5>{{ user.username }}</h5>
                             {% if user.is_admin %}
                                 <span class="badge bg-danger">Administrator</span>
+                            {% elif user.is_county %}
+                                <span class="badge bg-warning">County User</span>
                             {% else %}
                                 <span class="badge bg-primary">User</span>
                             {% endif %}
@@ -42,6 +44,18 @@
                                     <td>{{ user.role }}</td>
                                 </tr>
                                 {% endif %}
+                                <tr>
+                                    <td><strong>User Type:</strong></td>
+                                    <td>
+                                        {% if user.is_admin %}
+                                            <span class="badge bg-danger">Administrator</span>
+                                        {% elif user.is_county %}
+                                            <span class="badge bg-warning">County User</span>
+                                        {% else %}
+                                            <span class="badge bg-primary">Regular User</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
                                 {% if user.precinct %}
                                 <tr>
                                     <td><strong>Precinct:</strong></td>

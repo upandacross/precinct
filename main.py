@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
@@ -19,7 +19,6 @@ except ImportError:
 # TODP: CSRF
 # TODO: research HSTS and CSP via Flask-Talisman, X-Frame-Options deny
 # TODO: turn off DEBUG
-# TODO: research session timeout
 # TODO: research Auth0 for MFA
 
 class LoginForm(FlaskForm):
@@ -90,6 +89,64 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
     
+    # Session timeout handling
+    @app.before_request
+    def check_session_timeout():
+        """Check for session timeout and update last activity."""
+        if current_user.is_authenticated:
+            now = datetime.utcnow()
+            last_activity = session.get('last_activity')
+            
+            if last_activity:
+                last_activity = datetime.fromisoformat(last_activity)
+                timeout_minutes = app.config.get('SESSION_TIMEOUT_MINUTES', 30)
+                
+                # Check if session has timed out
+                if (now - last_activity).total_seconds() > (timeout_minutes * 60):
+                    logout_user()
+                    session.clear()
+                    flash('Your session has expired due to inactivity. Please log in again.', 'warning')
+                    return redirect(url_for('login'))
+            
+            # Update last activity timestamp
+            session['last_activity'] = now.isoformat()
+            session.permanent = True
+    
+    @app.route('/api/session-status')
+    @login_required
+    def session_status():
+        """API endpoint to check session status for client-side warnings."""
+        if not current_user.is_authenticated:
+            return jsonify({'status': 'expired'}), 401
+            
+        now = datetime.utcnow()
+        last_activity = session.get('last_activity')
+        
+        if last_activity:
+            last_activity = datetime.fromisoformat(last_activity)
+            timeout_minutes = app.config.get('SESSION_TIMEOUT_MINUTES', 30)
+            warning_minutes = app.config.get('SESSION_WARNING_MINUTES', 5)
+            
+            time_since_activity = (now - last_activity).total_seconds()
+            timeout_seconds = timeout_minutes * 60
+            warning_seconds = (timeout_minutes - warning_minutes) * 60
+            
+            if time_since_activity > warning_seconds:
+                remaining_seconds = timeout_seconds - time_since_activity
+                return jsonify({
+                    'status': 'warning',
+                    'remaining_seconds': max(0, int(remaining_seconds))
+                })
+        
+        return jsonify({'status': 'active'})
+    
+    @app.route('/api/extend-session', methods=['POST'])
+    @login_required
+    def extend_session():
+        """API endpoint to extend user session."""
+        session['last_activity'] = datetime.utcnow().isoformat()
+        return jsonify({'status': 'extended'})
+    
     # Flask-Admin setup
     admin = Admin(
         app, 
@@ -127,6 +184,11 @@ def create_app():
                 db.session.commit()
                 
                 login_user(user, remember=form.remember_me.data)
+                
+                # Initialize session timeout tracking
+                session['last_activity'] = datetime.utcnow().isoformat()
+                session.permanent = True
+                
                 flash(f'Welcome back, {user.username}!', 'success')
                 
                 # Redirect to next page or dashboard
@@ -146,6 +208,7 @@ def create_app():
         """Logout route."""
         username = current_user.username
         logout_user()
+        session.clear()  # Clear session data on logout
         flash(f'You have been logged out, {username}.', 'info')
         return redirect(url_for('login'))
     

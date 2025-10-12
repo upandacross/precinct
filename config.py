@@ -22,6 +22,8 @@ class Config:
     
     # Session Configuration
     PERMANENT_SESSION_LIFETIME = timedelta(hours=24)  # 24 hour sessions
+    SESSION_TIMEOUT_MINUTES = 30  # Session timeout after 30 minutes of inactivity
+    SESSION_WARNING_MINUTES = 5   # Warn user 5 minutes before timeout
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
@@ -43,12 +45,6 @@ class Config:
     RATELIMIT_DEFAULT = "200 per day, 50 per hour"  # Default rate limits
     RATELIMIT_HEADERS_ENABLED = True  # Include rate limit headers in responses
     
-    # Default Admin User
-    DEFAULT_ADMIN_USERNAME = 'admin'
-    DEFAULT_ADMIN_EMAIL = 'admin@example.com'
-    DEFAULT_ADMIN_PASSWORD = 'admin123'
-
-
 class DevelopmentConfig(Config):
     """Development configuration."""
     DEBUG = True
@@ -79,6 +75,11 @@ class ProductionConfig(Config):
     
     # Production security settings
     WTF_CSRF_SSL_STRICT = True
+    
+    # Stricter session timeouts for production
+    SESSION_TIMEOUT_MINUTES = 15  # 15 minutes for production
+    SESSION_WARNING_MINUTES = 2   # 2 minutes warning
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=8)  # Shorter max session
     
     # Stricter rate limits for production
     RATELIMIT_DEFAULT = "100 per day, 20 per hour"  # Stricter than development
