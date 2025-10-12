@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Message of the Day Admin - Precinct Member's Application{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-bullhorn"></i> Message of the Day Administration</h1>
+        <p class="lead">Update the message displayed to all users on the dashboard.</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-edit"></i> Edit Message of the Day</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="motd_content" class="form-label">
+                            <i class="fas fa-message"></i> Message Content
+                        </label>
+                        <textarea class="form-control" id="motd_content" name="motd_content" rows="8" 
+                                  placeholder="Enter the message of the day... Leave empty to hide the message from users.">{{ current_motd }}</textarea>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle"></i> 
+                            Use line breaks to format your message. HTML is not supported for security reasons.
+                            Leave empty to hide the message from all users.
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update Message
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-eye"></i> Current Message Preview</h5>
+            </div>
+            <div class="card-body">
+                {% if current_motd %}
+                <div class="alert alert-info" role="alert">
+                    <h6><i class="fas fa-bullhorn"></i> Message of the Day</h6>
+                    <div class="motd-content">
+                        {{ current_motd|replace('\n', '<br>')|safe }}
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-secondary" role="alert">
+                    <i class="fas fa-info-circle"></i> <strong>No message set</strong><br>
+                    Users will not see any message of the day.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-tips"></i> Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> Keep messages concise and informative</li>
+                    <li><i class="fas fa-check text-success"></i> Use line breaks for better readability</li>
+                    <li><i class="fas fa-check text-success"></i> Include dates for time-sensitive information</li>
+                    <li><i class="fas fa-check text-success"></i> Messages appear on the dashboard after login</li>
+                    <li><i class="fas fa-check text-success"></i> Users can dismiss the message</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i> <strong>Administrator Notice:</strong> 
+            Changes to the message of the day will be visible to all users immediately upon their next page load or login.
+        </div>
+    </div>
+</div>
+{% endblock %}

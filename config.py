@@ -21,7 +21,7 @@ class Config:
     WTF_CSRF_TIME_LIMIT = None  # No time limit for CSRF tokens
     
     # Session Configuration
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=24)  # 24 hour sessions
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=4)  # 4 hour sessions
     SESSION_TIMEOUT_MINUTES = 30  # Session timeout after 30 minutes of inactivity
     SESSION_WARNING_MINUTES = 5   # Warn user 5 minutes before timeout
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() == 'true'

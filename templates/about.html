@@ -46,13 +46,43 @@
                 <h5><i class="fas fa-shield-alt"></i> Security Features</h5>
             </div>
             <div class="card-body">
-                <ul class="list-unstyled">
-                    <li><i class="fas fa-check text-success"></i> Password hashing</li>
-                    <li><i class="fas fa-check text-success"></i> Hosting site protection</li>
-                    <li><i class="fas fa-check text-success"></i> Secure session management</li>
-                    <li><i class="fas fa-check text-success"></i> Input validation</li>
-                    <li><i class="fas fa-check text-success"></i> Unique password enforcement</li>
+                <h6><i class="fas fa-lock"></i> Authentication & Access Control</h6>
+                <ul class="list-unstyled mb-3">
+                    <li><i class="fas fa-check text-success"></i> <strong>Secure Password Hashing</strong> - Werkzeug password protection</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>Unique Password Enforcement</strong> - Prevents password reuse</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>Role-Based Access Control</strong> - Admin, County, and User roles</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>Secure Login Forms</strong> - CSRF protection and validation</li>
                 </ul>
+
+                <h6><i class="fas fa-clock"></i> Session Security</h6>
+                <ul class="list-unstyled mb-3">
+                    <li><i class="fas fa-check text-success"></i> <strong>Automatic Session Timeout</strong> - 30min (dev) / 15min (prod)</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>Activity-Based Extension</strong> - Sessions extend with user activity</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>Proactive Warnings</strong> - 5min warning before timeout</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>Secure Session Cookies</strong> - HTTPOnly and SameSite protection</li>
+                </ul>
+
+                <h6><i class="fas fa-tachometer-alt"></i> Rate Limiting & DoS Protection</h6>
+                <ul class="list-unstyled mb-3">
+                    <li><i class="fas fa-check text-success"></i> <strong>Login Brute Force Protection</strong> - 10 attempts/minute</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>File Access Limits</strong> - 100 requests/hour per endpoint</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>Global Rate Limits</strong> - 200/day, 50/hour (dev)</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>Production Limits</strong> - Stricter 100/day, 20/hour</li>
+                </ul>
+
+                <h6><i class="fas fa-server"></i> Infrastructure Security</h6>
+                <ul class="list-unstyled mb-0">
+                    <li><i class="fas fa-check text-success"></i> <strong>Input Validation</strong> - Server-side form validation</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>Path Traversal Protection</strong> - Secure file access controls</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>Error Handling</strong> - User-friendly security error messages</li>
+                    <li><i class="fas fa-check text-success"></i> <strong>Admin Interface Security</strong> - Restricted Flask-Admin access</li>
+                </ul>
+
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle"></i> <strong>Security Implementation:</strong> 
+                    Enhanced security features implemented October 2025 including Flask-Limiter rate limiting 
+                    and comprehensive session timeout management with real-time monitoring.
+                </div>
             </div>
         </div>
     </div>
@@ -145,6 +175,8 @@
             <p class="mb-0">You are currently logged in as 
                 {% if current_user.is_admin %}
                     <span class="badge bg-danger">Administrator</span>
+                {% elif current_user.is_county %}
+                    <span class="badge bg-warning">County User</span>
                 {% else %}
                     <span class="badge bg-primary">Precinct Leader/Resident</span>
                 {% endif %}

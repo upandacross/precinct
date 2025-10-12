@@ -89,6 +89,25 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
     
+    # Message of the Day helper function
+    def get_motd():
+        """Read and return the message of the day from motd.txt file."""
+        try:
+            motd_path = os.path.join(app.root_path, 'motd.txt')
+            if os.path.exists(motd_path):
+                with open(motd_path, 'r', encoding='utf-8') as f:
+                    content = f.read().strip()
+                    return content if content else None
+            return None
+        except Exception as e:
+            app.logger.warning(f'Error reading MOTD file: {str(e)}')
+            return None
+    
+    # Make MOTD function available to all templates
+    @app.context_processor
+    def inject_motd():
+        return dict(get_motd=get_motd)
+    
     # Session timeout handling
     @app.before_request
     def check_session_timeout():
@@ -235,6 +254,30 @@ def create_app():
     def profile():
         """User profile page."""
         return render_template('profile.html', user=current_user)
+    
+    @app.route('/admin/motd', methods=['GET', 'POST'])
+    @login_required
+    def admin_motd():
+        """Admin page to edit message of the day."""
+        if not current_user.is_admin:
+            flash('Access denied. Administrator access required.', 'error')
+            return redirect(url_for('index'))
+        
+        motd_path = os.path.join(app.root_path, 'motd.txt')
+        
+        if request.method == 'POST':
+            motd_content = request.form.get('motd_content', '').strip()
+            try:
+                with open(motd_path, 'w', encoding='utf-8') as f:
+                    f.write(motd_content)
+                flash('Message of the Day updated successfully!', 'success')
+            except Exception as e:
+                flash(f'Error updating MOTD: {str(e)}', 'error')
+            return redirect(url_for('admin_motd'))
+        
+        # GET request - display the form
+        current_motd = get_motd() or ''
+        return render_template('admin_motd.html', current_motd=current_motd)
     
     @app.route('/static-content')
     @login_required
