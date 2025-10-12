@@ -12,8 +12,8 @@ class Config:
     # Basic Flask Configuration
     SECRET_KEY = os.environ.get('SECRET_KEY', '!1OkslCZtBBPCHRG!')    # Database Configuration
 
-    # Database Configuration
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
+    # Database Configuration - Only PostgreSQL NC database on hosting platform
+    SQLALCHEMY_DATABASE_URI = os.environ.get('NC_DATABASE_URL', 'postgresql://postgres:password@localhost:5432/nc')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Security Configuration
@@ -48,6 +48,8 @@ class Config:
     # Rate Limiting Configuration
     RATELIMIT_STORAGE_URL = "memory://"  # Use in-memory storage for rate limiting
     RATELIMIT_DEFAULT = "200 per day, 50 per hour"  # Default rate limits
+    
+    # PostgreSQL is the only database on hosting platform
     RATELIMIT_HEADERS_ENABLED = True  # Include rate limit headers in responses
     
 class DevelopmentConfig(Config):
@@ -55,9 +57,8 @@ class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = False
     
-    # Development specific database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL',
-                                             'sqlite:///app_dev.db')
+    # Development uses NC PostgreSQL database
+    SQLALCHEMY_DATABASE_URI = os.environ.get('NC_DATABASE_URL', 'postgresql://postgres:password@localhost:5432/nc')
     
     # Less secure cookies for development
     SESSION_COOKIE_SECURE = False
@@ -69,9 +70,8 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
     
-    # Production database (should be set via environment variable)
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL',
-                                             'sqlite:///app.db')
+    # Production uses NC PostgreSQL database 
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or os.environ.get('NC_DATABASE_URL', 'postgresql://postgres:password@localhost:5432/nc')
 
     # Secure cookies for production
     SESSION_COOKIE_SECURE = True

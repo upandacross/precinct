@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import os
 
 db = SQLAlchemy()
 
@@ -70,3 +71,79 @@ class User(UserMixin, db.Model):
     
     def __str__(self):
         return self.username
+
+
+class Map(db.Model):
+    """Map model for storing precinct map data in NC PostgreSQL database."""
+    
+    __tablename__ = 'maps'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    state = db.Column(db.String(100), nullable=False, index=True)
+    county = db.Column(db.String(100), nullable=False, index=True)
+    precinct = db.Column(db.String(100), nullable=False, index=True)
+    map = db.Column(db.Text, nullable=True)  # Store HTML content
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __init__(self, state, county, precinct, map=None):
+        self.state = state
+        self.county = county
+        self.precinct = precinct
+        self.map = map
+    
+    @staticmethod
+    def get_map_for_user(user):
+        """Get the map for a specific user based on their state, county, and precinct."""
+        if not user.state or not user.county or not user.precinct:
+            return None
+        
+        return Map.query.filter_by(
+            state=user.state,
+            county=user.county,
+            precinct=user.precinct
+        ).first()
+    
+    @staticmethod
+    def get_map_by_location(state, county, precinct):
+        """Get the map for a specific location."""
+        return Map.query.filter_by(
+            state=state,
+            county=county,
+            precinct=precinct
+        ).first()
+    
+    @staticmethod
+    def get_maps_for_county(county_name):
+        """Get all maps for a specific county from NC database."""
+        return Map.query.filter_by(county=county_name).order_by(Map.precinct).all()
+    
+    @staticmethod
+    def get_map_filenames_for_county(county_name):
+        """Get all map filenames for a specific county."""
+        maps = Map.get_maps_for_county(county_name)
+        
+        map_files = []
+        for map_obj in maps:
+            filename = f"{map_obj.precinct}.html"
+            map_files.append({
+                'filename': filename,
+                'precinct': map_obj.precinct,
+                'state': map_obj.state,
+                'county': map_obj.county,
+                'display_name': f'{map_obj.state} {map_obj.county} Precinct {map_obj.precinct}',
+                'source': 'nc_database',
+                'map_content': map_obj.map,
+                'size': len(map_obj.map) if map_obj.map else 0,
+                'modified': map_obj.created_at,
+                'map_id': map_obj.id
+            })
+        
+        return map_files
+    
+    def __repr__(self):
+        return f'<Map {self.state}-{self.county}-{self.precinct}>'
+    
+    def __str__(self):
+        return f'{self.state} {self.county} Precinct {self.precinct}'
+
+

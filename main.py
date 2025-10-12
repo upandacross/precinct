@@ -8,7 +8,7 @@ from flask_limiter.util import get_remote_address
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length, Email
-from models import db, User
+from models import db, User, Map
 from datetime import datetime
 from config import get_config
 try:
@@ -85,6 +85,8 @@ def create_app():
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'info'
     
+    # NC database is initialized through the same db instance with SQLALCHEMY_BINDS
+    
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
@@ -103,6 +105,224 @@ def create_app():
             app.logger.warning(f'Error reading MOTD file: {str(e)}')
             return None
     
+    # Map helper functions
+    def create_error_page(error_title, error_message):
+        """Create a standardized error page for map loading issues."""
+        return f'''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{error_title} - Precinct Maps</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background-color: #f8f9fa;
+            color: #333;
+        }}
+        .error-container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }}
+        .error-icon {{
+            font-size: 64px;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }}
+        .error-title {{
+            font-size: 24px;
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 15px;
+        }}
+        .error-message {{
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 25px;
+            color: #666;
+        }}
+        .error-actions {{
+            margin-top: 30px;
+        }}
+        .btn {{
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }}
+        .btn-primary {{
+            background-color: #007bff;
+            color: white;
+        }}
+        .btn-secondary {{
+            background-color: #6c757d;
+            color: white;
+        }}
+        .btn:hover {{
+            opacity: 0.9;
+        }}
+        .technical-info {{
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #dc3545;
+            text-align: left;
+            font-size: 14px;
+            color: #666;
+        }}
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <div class="error-title">{error_title}</div>
+        <div class="error-message">{error_message}</div>
+        
+        <div class="error-actions">
+            <a href="javascript:history.back()" class="btn btn-secondary">← Go Back</a>
+            <a href="/dashboard" class="btn btn-primary">Dashboard</a>
+        </div>
+        
+        <div class="technical-info">
+            <strong>What happened?</strong><br>
+            There was an issue retrieving the map content from the database. This could be due to:
+            <ul style="margin: 10px 0; text-align: left;">
+                <li>Temporary database connectivity issues</li>
+                <li>Missing or corrupted map data</li>
+                <li>File system issues with static map files</li>
+            </ul>
+            If this problem persists, please contact technical support.
+        </div>
+    </div>
+</body>
+</html>'''
+
+    def get_map_content_for_user(user):
+        """Get map content for a user from the database."""
+        if not user or not user.state or not user.county or not user.precinct:
+            return None
+        
+        try:
+            map_record = Map.get_map_for_user(user)
+            if not map_record or not map_record.map:
+                return None
+            
+            # If map field contains just a filename, try to load from static_html directory
+            if map_record.map.endswith('.html') and len(map_record.map) < 50:
+                static_content = get_static_html_content(map_record.map)
+                if static_content is None:
+                    # Static file referenced by database but not found
+                    app.logger.error(f'Database references static file {map_record.map} for user {user.username} but file not found')
+                    return create_error_page("Database Error", 
+                        f"Map file '{map_record.map}' referenced in database but not found in static directory.")
+                return static_content
+            
+            # Otherwise, assume it's HTML content stored directly in the database
+            return map_record.map
+            
+        except Exception as e:
+            app.logger.error(f'Database error retrieving map for user {user.username}: {str(e)}')
+            return create_error_page("Database Error", 
+                "Failed to retrieve map from database. Please try again or contact support.")
+    
+    def get_map_content_by_filename(filename):
+        """Get map content by filename, checking database first, then static files."""
+        try:
+            # Extract precinct number from filename (e.g., "999.html" -> "999")
+            if filename.endswith('.html'):
+                precinct = filename[:-5]  # Remove .html extension
+                
+                # Try to find in database by precinct number
+                # We don't know the state/county, so we'll search for any map with this precinct
+                map_record = Map.query.filter_by(precinct=precinct).first()
+                
+                if map_record and map_record.map:
+                    # If it's stored HTML content, return it
+                    if not map_record.map.endswith('.html') or len(map_record.map) > 50:
+                        app.logger.info(f'Serving map {filename} from database (full content) for {map_record.state} {map_record.county} Precinct {map_record.precinct}')
+                        return map_record.map
+                    
+                    # If it's a filename reference, load the static file
+                    static_content = get_static_html_content(map_record.map)
+                    if static_content is None:
+                        app.logger.error(f'Database references static file {map_record.map} for {filename} but file not found')
+                        return create_error_page("Database Error", 
+                            f"Map file '{map_record.map}' referenced in database but not found in static directory.")
+                    app.logger.info(f'Serving map {filename} from database reference to static file {map_record.map}')
+                    return static_content
+            
+            # Also try searching in the map field for filename references (legacy support)
+            map_record = Map.query.filter(Map.map.like(f'%{filename}%')).first()
+            if map_record and map_record.map:
+                if map_record.map == filename:  # Exact filename match
+                    static_content = get_static_html_content(filename)
+                    if static_content is None:
+                        app.logger.error(f'Database references static file {filename} but file not found')
+                        return create_error_page("Database Error", 
+                            f"Map file '{filename}' referenced in database but not found in static directory.")
+                    app.logger.info(f'Serving map {filename} from database reference to static file')
+                    return static_content
+            
+        except Exception as e:
+            app.logger.error(f'Database error retrieving map by filename {filename}: {str(e)}')
+            return create_error_page("Database Error", 
+                "Failed to retrieve map from database. Please try again or contact support.")
+        
+        # Fall back to static file
+        static_content = get_static_html_content(filename)
+        if static_content:
+            app.logger.info(f'Serving map {filename} from static file fallback (no database match found)')
+            return static_content
+        
+        # Neither database nor static file found
+        return None
+    
+    def get_static_html_content(filename):
+        """Get HTML content from static_html directory."""
+        try:
+            static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
+            file_path = os.path.join(static_html_dir, filename)
+            
+            if not os.path.exists(file_path) or not filename.endswith('.html'):
+                return None
+            
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except Exception as e:
+            app.logger.error(f'Error reading static HTML file {filename}: {str(e)}')
+            return None
+    
+    def user_can_access_map(user, filename_or_precinct):
+        """Check if user can access a specific map."""
+        if user.is_admin:
+            return True
+        
+        # For county users, allow access to any map in their county
+        if user.is_county and user.state and user.county:
+            return True
+        
+        # For regular users, only allow access to their assigned map
+        if user.map == filename_or_precinct:
+            return True
+        
+        # Also check if the filename matches their precinct
+        if user.precinct == filename_or_precinct:
+            return True
+        
+        # Check if filename corresponds to user's location
+        if filename_or_precinct and filename_or_precinct.replace('.html', '') == user.precinct:
+            return True
+        
+        return False
+
     # Make MOTD function available to all templates
     @app.context_processor
     def inject_motd():
@@ -280,107 +500,71 @@ def create_app():
     @app.route('/static-content')
     @login_required
     def static_content():
-        """Display list of available maps. Admin and county access."""
+        """Display list of available maps with filenames from NC database but view/new tab using local maps table. Admin and county access."""
         if not (current_user.is_admin or current_user.is_county):
             flash('Access denied. Maps are available to administrators and county users only.', 'error')
             return redirect(url_for('index'))
-        static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
         
-        # Create directory if it doesn't exist
-        if not os.path.exists(static_html_dir):
-            os.makedirs(static_html_dir)
-            # Create a sample file
-            sample_content = """<!DOCTYPE html>
-<html>
-<head>
-    <title>Sample Static Content</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .content { max-width: 800px; margin: 0 auto; }
-        h1 { color: #333; }
-        .info-box { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
-    </style>
-</head>
-<body>
-    <div class="content">
-        <h1>Sample Static HTML Content</h1>
-        <p>This is a sample static HTML file for the Precinct Leaders App. You can add more files to the static_html directory.</p>
-        
-        <div class="info-box">
-            <h2>Features Available:</h2>
-            <ul>
-                <li>Full HTML support with custom styling</li>
-                <li>CSS styling and responsive design</li>
-                <li>JavaScript functionality</li>
-                <li>Embedded media and images</li>
-                <li>Interactive elements and forms</li>
-            </ul>
-        </div>
-        
-        <h2>Precinct Information</h2>
-        <p>This section could contain specific precinct data, maps, contact information, or any other relevant content for precinct leaders.</p>
-        
-        <h3>Example Data Table</h3>
-        <table border="1" style="border-collapse: collapse; width: 100%;">
-            <tr style="background: #e9ecef;">
-                <th style="padding: 8px;">Precinct</th>
-                <th style="padding: 8px;">Leader</th>
-                <th style="padding: 8px;">Contact</th>
-            </tr>
-            <tr>
-                <td style="padding: 8px;">704</td>
-                <td style="padding: 8px;">John Doe</td>
-                <td style="padding: 8px;">john@example.com</td>
-            </tr>
-            <tr>
-                <td style="padding: 8px;">705</td>
-                <td style="padding: 8px;">Jane Smith</td>
-                <td style="padding: 8px;">jane@example.com</td>
-            </tr>
-        </table>
-    </div>
-</body>
-</html>"""
-            with open(os.path.join(static_html_dir, 'sample.html'), 'w') as f:
-                f.write(sample_content)
-        
-        # Get list of HTML files
         html_files = []
-        try:
-            for filename in os.listdir(static_html_dir):
-                if filename.endswith('.html'):
-                    file_path = os.path.join(static_html_dir, filename)
-                    file_stats = os.stat(file_path)
-                    html_files.append({
-                        'name': filename,
-                        'display_name': filename.replace('.html', '').replace('_', ' ').title(),
-                        'size': file_stats.st_size,
-                        'modified': datetime.fromtimestamp(file_stats.st_mtime)
-                    })
-        except OSError:
-            pass
         
-        html_files.sort(key=lambda x: x['name'])
+        # Get maps from NC PostgreSQL database only - no fallbacks
+        try:
+            if not current_user.county:
+                app.logger.error(f'User {current_user.username} has no county assigned')
+                flash('Your county information is not set. Please contact an administrator.', 'error')
+                return redirect(url_for('profile'))
+            
+            # Get maps for the current user's county from NC database
+            nc_maps = Map.get_map_filenames_for_county(current_user.county)
+            app.logger.info(f'Found {len(nc_maps)} maps from NC database for county: {current_user.county}')
+            
+            if not nc_maps:
+                app.logger.error(f'No maps found in NC database for county: {current_user.county}')
+                flash(f'No maps found for county: {current_user.county}. This is a database error.', 'error')
+                return redirect(url_for('index'))
+            
+            for nc_map in nc_maps:
+                if not nc_map.get('map_content'):
+                    app.logger.error(f'Map content missing for precinct {nc_map["precinct"]} in county {current_user.county}')
+                    # Still show the map but mark it as having an error
+                    has_content = False
+                else:
+                    has_content = True
+                
+                html_files.append({
+                    'name': nc_map['filename'],
+                    'display_name': nc_map['display_name'],
+                    'size': nc_map.get('size', 0),
+                    'modified': nc_map.get('modified', datetime.utcnow()),
+                    'source': 'nc_database',
+                    'precinct': nc_map['precinct'],
+                    'has_content': has_content,
+                    'map_id': nc_map.get('map_id')
+                })
+                
+        except Exception as e:
+            app.logger.error(f'Critical error accessing NC database: {str(e)}')
+            flash('Database error: Unable to access map data. Please contact technical support.', 'error')
+            return redirect(url_for('index'))
+        
+        html_files.sort(key=lambda x: (x.get('source', 'static'), x['name']))
         return render_template('static_content.html', files=html_files)
     
     @app.route('/static-content/<filename>')
     @login_required
     @limiter.limit("100 per hour")  # Limit file access to prevent excessive downloads
     def view_static_content(filename):
-        """Display a specific static HTML file with navbar. Available to all authenticated users."""
-        static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
-        file_path = os.path.join(static_html_dir, filename)
-        
-        # Security check - ensure file exists and is within the static_html directory
-        if not os.path.exists(file_path) or not filename.endswith('.html'):
-            abort(404)
-        
-        # Check access permissions: admin, county users, or user's assigned map
+        """Display a specific map file with navbar. Available to all authenticated users."""
+        # Check access permissions using the new helper function
         if not (current_user.is_admin or current_user.is_county):
-            # Regular users can only view their assigned map
-            if current_user.map != filename:
+            if not user_can_access_map(current_user, filename):
                 flash('Access denied. You can only view your assigned map.', 'error')
                 return redirect(url_for('index'))
+        
+        # Try to get map content from database first, then fall back to static files
+        map_content = get_map_content_by_filename(filename)
+        if not map_content:
+            abort(404)
         
         return render_template('static_viewer.html', 
                              filename=filename,
@@ -395,37 +579,32 @@ def create_app():
         # Allow all authenticated users to view static content
         # For non-admin users, they can only access via direct links (not browse the library)
         
-        static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
-        file_path = os.path.join(static_html_dir, filename)
+        # Try to get map content from database first, then fall back to static files
+        content = get_map_content_by_filename(filename)
+        if content is None:
+            # Neither database nor static file found
+            error_content = create_error_page("Map Not Found", 
+                f"The requested map '{filename}' could not be found in the database or static files.")
+            return error_content, 404
         
-        # Security check - ensure file exists and is within the static_html directory
-        if not os.path.exists(file_path) or not filename.endswith('.html'):
-            abort(404)
-        
-        # Read and serve the raw HTML content
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            return content
-        except Exception as e:
-            return f'<html><body><h1>Error</h1><p>Error reading file: {str(e)}</p></body></html>', 500
+        # Content found (either valid content or error page from database issues)
+        return content
     
     @app.route('/view/<filename>')
     @login_required
     @limiter.limit("100 per hour")  # Limit new tab file access
     def view_file_new_tab(filename):
-        """Open static HTML file directly in new tab with close button. Available to all authenticated users."""
-        static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
-        file_path = os.path.join(static_html_dir, filename)
+        """Open map file directly in new tab with close button. Available to all authenticated users."""
+        # Try to get map content from database first, then fall back to static files
+        content = get_map_content_by_filename(filename)
+        if content is None:
+            # Neither database nor static file found
+            error_content = create_error_page("Map Not Found", 
+                f"The requested map '{filename}' could not be found in the database or static files.")
+            return error_content, 404
         
-        # Security check - ensure file exists and is within the static_html directory
-        if not os.path.exists(file_path) or not filename.endswith('.html'):
-            abort(404)
-        
-        # Read and serve the raw HTML content with close button
+        # Add close button and zoom controls to the content
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
             
             # Add a close window button to the map content
             close_button = '''
@@ -487,17 +666,15 @@ function closeWindow() {
     @limiter.limit("100 per hour")  # Limit user map access
     def view_user_map(filename):
         """Display user's map file with navbar. Shows current user's map or any map for admins."""
-        static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
-        file_path = os.path.join(static_html_dir, filename)
-        
-        # Security check - ensure file exists and is within the static_html directory
-        if not os.path.exists(file_path) or not filename.endswith('.html'):
-            abort(404)
-        
-        # Check if current user's map matches requested filename or if user is admin
-        if current_user.map != filename and not current_user.is_admin:
+        # Check access permissions using new helper function
+        if not user_can_access_map(current_user, filename):
             flash('Access denied. You can only view your assigned map.', 'error')
             return redirect(url_for('profile'))
+        
+        # Try to get map content from database first, then fall back to static files
+        map_content = get_map_content_by_filename(filename)
+        if not map_content:
+            abort(404)
         
         return render_template('static_viewer.html', 
                              filename=filename,
@@ -509,21 +686,17 @@ function closeWindow() {
     @limiter.limit("100 per hour")  # Limit raw user map access
     def view_user_map_raw(filename):
         """Serve raw HTML file content for user's map iframe display with zoom control support."""
-        static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
-        file_path = os.path.join(static_html_dir, filename)
-        
-        # Security check - ensure file exists and is within the static_html directory
-        if not os.path.exists(file_path) or not filename.endswith('.html'):
-            abort(404)
-        
-        # Check if current user's map matches requested filename or if user is admin
-        if current_user.map != filename and not current_user.is_admin:
+        # Check access permissions using new helper function
+        if not user_can_access_map(current_user, filename):
             return '<html><body><h1>Access Denied</h1><p>You can only view your assigned map.</p></body></html>', 403
         
-        # Read and serve the raw HTML content with zoom control support
+        # Try to get map content from database first, then fall back to static files
+        content = get_map_content_by_filename(filename)
+        if not content:
+            abort(404)
+        
+        # Add zoom control support to the content
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
             
             # Add message listener for zoom controls to work with sidebar
             zoom_message_listener = '''
@@ -610,6 +783,83 @@ document.addEventListener('DOMContentLoaded', function() {
             db.session.commit()
             print(f"Created default admin user: {current_app.config['DEFAULT_ADMIN_USERNAME']}/{current_app.config['DEFAULT_ADMIN_PASSWORD']}")
     
+    @app.route('/my-map')
+    @login_required
+    @limiter.limit("100 per hour")  # Limit user map access
+    def view_my_map():
+        """Display the current user's map based on their state, county, and precinct."""
+        if not current_user.state or not current_user.county or not current_user.precinct:
+            flash('Your location information is not complete. Please contact an administrator to update your profile.', 'warning')
+            return redirect(url_for('profile'))
+        
+        # Get the user's map from database
+        map_content = get_map_content_for_user(current_user)
+        if map_content is None:
+            flash(f'No map found for {current_user.state} {current_user.county} Precinct {current_user.precinct}.', 'info')
+            return redirect(url_for('dashboard'))
+        elif 'Database Error' in map_content and '<div class="error-container">' in map_content:
+            # Database error occurred, show error message
+            flash('There was an error retrieving your map from the database. Please try again or contact support.', 'error')
+            return redirect(url_for('dashboard'))
+        
+        # Create a filename for display purposes
+        filename = f"{current_user.precinct}.html"
+        return render_template('static_viewer.html', 
+                             filename=filename,
+                             display_name=f"{current_user.state} {current_user.county} Precinct {current_user.precinct}",
+                             is_user_map=True)
+    
+    @app.route('/my-map-raw')
+    @login_required
+    @limiter.limit("100 per hour")  # Limit raw user map access
+    def view_my_map_raw():
+        """Serve raw HTML content for the current user's map."""
+        if not current_user.state or not current_user.county or not current_user.precinct:
+            return '<html><body><h1>Error</h1><p>Location information not available.</p></body></html>', 400
+        
+        # Get the user's map from database
+        content = get_map_content_for_user(current_user)
+        if content is None:
+            error_content = create_error_page("Map Not Found", 
+                f"No map available for {current_user.state} {current_user.county} Precinct {current_user.precinct}.")
+            return error_content, 404
+        
+        # Add zoom control support
+        zoom_message_listener = '''
+<script>
+// Message listener for sidebar zoom controls
+window.addEventListener('message', function(event) {
+    if (event.data && event.data.action) {
+        switch(event.data.action) {
+            case 'zoomIn':
+                if (window.map && window.map.zoomIn) {
+                    window.map.zoomIn();
+                }
+                break;
+            case 'zoomOut':
+                if (window.map && window.map.zoomOut) {
+                    window.map.zoomOut();
+                }
+                break;
+            case 'resetZoom':
+                if (window.map && window.map.setView) {
+                    window.map.setView([39.8283, -98.5795], 4);
+                }
+                break;
+        }
+    }
+});
+</script>
+        '''
+        
+        # Insert zoom controls before closing </body> tag
+        if '</body>' in content:
+            content = content.replace('</body>', zoom_message_listener + '</body>')
+        else:
+            content = content + zoom_message_listener
+        
+        return content
+
     # Initialize database
     with app.app_context():
         init_db()

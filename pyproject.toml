@@ -18,4 +18,5 @@ dependencies = [
     "pandas>=2.3.2",
     "flask-limit>=2.0.5",
     "flask-limiter>=4.0.0",
+    "psycopg2-binary>=2.9.0",
 ]

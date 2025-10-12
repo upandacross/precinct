@@ -2,7 +2,7 @@
 __pycache__/
 build/
 dist/
-instance/app.db
+instance/*.bak
 wheels/
 *.egg-info
 *.py[oc]
