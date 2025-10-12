@@ -8,5 +8,6 @@ wheels/
 *.py[oc]
 uv.lock
 *.tar
+doc/*
 
 # Virtual environments
