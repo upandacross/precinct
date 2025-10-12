@@ -38,6 +38,11 @@ class Config:
     STATIC_HTML_DIR = 'static_html'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file upload
     
+    # Rate Limiting Configuration
+    RATELIMIT_STORAGE_URL = "memory://"  # Use in-memory storage for rate limiting
+    RATELIMIT_DEFAULT = "200 per day, 50 per hour"  # Default rate limits
+    RATELIMIT_HEADERS_ENABLED = True  # Include rate limit headers in responses
+    
     # Default Admin User
     DEFAULT_ADMIN_USERNAME = 'admin'
     DEFAULT_ADMIN_EMAIL = 'admin@example.com'
@@ -74,6 +79,9 @@ class ProductionConfig(Config):
     
     # Production security settings
     WTF_CSRF_SSL_STRICT = True
+    
+    # Stricter rate limits for production
+    RATELIMIT_DEFAULT = "100 per day, 20 per hour"  # Stricter than development
 
 
 class TestingConfig(Config):

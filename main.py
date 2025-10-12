@@ -3,6 +3,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, abo
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length, Email
@@ -14,7 +16,6 @@ try:
     DASH_AVAILABLE = True
 except ImportError:
     DASH_AVAILABLE = False
-# TODO: flask_limit
 # TODP: CSRF
 # TODO: research HSTS and CSP via Flask-Talisman, X-Frame-Options deny
 # TODO: turn off DEBUG
@@ -70,6 +71,14 @@ def create_app():
     # Initialize extensions
     db.init_app(app)
     
+    # Flask-Limiter setup
+    limiter = Limiter(
+        key_func=get_remote_address,
+        default_limits=["200 per day", "50 per hour"],
+        storage_uri=app.config.get('RATELIMIT_STORAGE_URL', 'memory://')
+    )
+    limiter.init_app(app)
+    
     # Flask-Login setup
     login_manager = LoginManager()
     login_manager.init_app(app)
@@ -102,6 +111,7 @@ def create_app():
         return render_template('dashboard.html', user=current_user)
     
     @app.route('/login', methods=['GET', 'POST'])
+    @limiter.limit("10 per minute")  # Protect against brute force attacks
     def login():
         """Login page."""
         if current_user.is_authenticated:
@@ -251,6 +261,7 @@ def create_app():
     
     @app.route('/static-content/<filename>')
     @login_required
+    @limiter.limit("100 per hour")  # Limit file access to prevent excessive downloads
     def view_static_content(filename):
         """Display a specific static HTML file with navbar. Available to all authenticated users."""
         static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
@@ -274,6 +285,7 @@ def create_app():
     
     @app.route('/static-content-raw/<filename>')
     @login_required
+    @limiter.limit("100 per hour")  # Limit raw file access
     def view_static_content_raw(filename):
         """Serve raw HTML file content for iframe display. Available to all authenticated users."""
         # Allow all authenticated users to view static content
@@ -286,79 +298,17 @@ def create_app():
         if not os.path.exists(file_path) or not filename.endswith('.html'):
             abort(404)
         
-        # Read and serve the raw HTML content with message listener support
+        # Read and serve the raw HTML content
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            
-            # Add message listener for sidebar controls (zoom and print)
-            message_listener = '''
-<script>
-// Message listener for sidebar controls
-window.addEventListener('message', function(event) {
-    if (event.data && event.data.action) {
-        switch(event.data.action) {
-            case 'zoomIn':
-                if (window.map && window.map.zoomIn) {
-                    window.map.zoomIn();
-                }
-                break;
-            case 'zoomOut':
-                if (window.map && window.map.zoomOut) {
-                    window.map.zoomOut();
-                }
-                break;
-            case 'resetZoom':
-                if (window.map && window.map.setView) {
-                    // Reset to initial map view
-                    window.map.setView([39.8283, -98.5795], 4);
-                }
-                break;
-            case 'preparePrint':
-                if (window.map && window.map.invalidateSize) {
-                    // Resize map to fit container for print layout
-                    setTimeout(function() {
-                        window.map.invalidateSize();
-                    }, 100);
-                }
-                break;
-        }
-    }
-});
-
-// Make map globally accessible for controls
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(function() {
-        if (typeof map !== 'undefined') {
-            window.map = map;
-        } else {
-            for (let key in window) {
-                if (window[key] && typeof window[key] === 'object' && 
-                    window[key].hasOwnProperty('_container') && 
-                    window[key]._container && window[key]._container.classList.contains('leaflet-container')) {
-                    window.map = window[key];
-                    break;
-                }
-            }
-        }
-    }, 1000);
-});
-</script>
-            '''
-            
-            # Insert message listener before closing </body> tag
-            if '</body>' in content:
-                content = content.replace('</body>', message_listener + '</body>')
-            else:
-                # If no </body> tag found, add it at the end
-                content = content + message_listener
-            
             return content
         except Exception as e:
             return f'<html><body><h1>Error</h1><p>Error reading file: {str(e)}</p></body></html>', 500
     
     @app.route('/view/<filename>')
     @login_required
+    @limiter.limit("100 per hour")  # Limit new tab file access
     def view_file_new_tab(filename):
         """Open static HTML file directly in new tab with close button. Available to all authenticated users."""
         static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
@@ -403,50 +353,6 @@ function closeWindow() {
 </script>
             '''
             
-            # Print CSS for new tab view
-            print_css = '''
-<style media="print">
-    @page {
-        margin: 0.5in;
-        size: landscape;
-    }
-    
-    body {
-        margin: 0;
-        padding: 0;
-    }
-    
-    .leaflet-container {
-        width: 100% !important;
-        height: 7in !important;
-        max-width: 100% !important;
-        page-break-inside: avoid;
-    }
-    
-    .folium-map {
-        width: 100% !important;
-        height: 7in !important;
-        max-width: 100% !important;
-    }
-    
-    /* Hide controls during print */
-    .new-tab-zoom-controls,
-    .leaflet-control-container,
-    .leaflet-popup,
-    .leaflet-tooltip,
-    button[onclick*="close"] {
-        display: none !important;
-    }
-    
-    /* Ensure legend remains visible */
-    div[style*="position: absolute"][style*="bottom"] {
-        position: relative !important;
-        bottom: auto !important;
-        margin-top: 10px;
-    }
-</style>
-            '''
-
             # Enhanced zoom controls for new tab view
             enhanced_zoom_controls = '''
 <!-- Enhanced Zoom Controls for New Tab -->
@@ -461,15 +367,12 @@ function closeWindow() {
 </div>
             '''
             
-            # Insert print CSS in head, close button and zoom controls after the opening <body> tag
-            if '<head>' in content:
-                content = content.replace('<head>', '<head>' + print_css)
-            
+            # Insert close button and zoom controls after the opening <body> tag
             if '<body>' in content:
                 content = content.replace('<body>', '<body>' + close_button + enhanced_zoom_controls)
             else:
                 # If no <body> tag found, add it at the beginning
-                content = print_css + close_button + enhanced_zoom_controls + content
+                content = close_button + enhanced_zoom_controls + content
             
             return content
         except Exception as e:
@@ -477,6 +380,7 @@ function closeWindow() {
     
     @app.route('/user-map/<filename>')
     @login_required
+    @limiter.limit("100 per hour")  # Limit user map access
     def view_user_map(filename):
         """Display user's map file with navbar. Shows current user's map or any map for admins."""
         static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
@@ -498,6 +402,7 @@ function closeWindow() {
     
     @app.route('/user-map-raw/<filename>')
     @login_required
+    @limiter.limit("100 per hour")  # Limit raw user map access
     def view_user_map_raw(filename):
         """Serve raw HTML file content for user's map iframe display with zoom control support."""
         static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
@@ -539,14 +444,6 @@ window.addEventListener('message', function(event) {
                     window.map.setView([39.8283, -98.5795], 4); // Default US center view
                 }
                 break;
-            case 'preparePrint':
-                if (window.map && window.map.invalidateSize) {
-                    // Resize map to fit container for print layout
-                    setTimeout(function() {
-                        window.map.invalidateSize();
-                    }, 100);
-                }
-                break;
         }
     }
 });
@@ -584,6 +481,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return content
         except Exception as e:
             return f'<html><body><h1>Error</h1><p>Error reading file: {str(e)}</p></body></html>', 500
+    
+    # Rate limiting error handler
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        """Handle rate limit exceeded errors."""
+        flash('Rate limit exceeded. Please try again later.', 'warning')
+        return render_template('dashboard.html', user=current_user), 429
     
     def init_db():
         """Initialize database with tables and create admin user if none exists."""

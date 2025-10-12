@@ -16,4 +16,6 @@ dependencies = [
     "wtforms==3.0.0",
     "dash>=3.2.0",
     "pandas>=2.3.2",
+    "flask-limit>=2.0.5",
+    "flask-limiter>=4.0.0",
 ]
