@@ -23,7 +23,6 @@
                             <thead>
                                 <tr>
                                     <th><i class="fas fa-file"></i> Document</th>
-                                    <th><i class="fas fa-info-circle"></i> Size</th>
                                     <th><i class="fas fa-calendar"></i> Modified</th>
                                     <th><i class="fas fa-cogs"></i> Actions</th>
                                 </tr>
@@ -38,15 +37,6 @@
                                         <small class="text-muted">{{ file.name }}</small>
                                         {% if not file.has_content %}
                                             <br><small class="badge bg-danger text-white"><i class="fas fa-exclamation-triangle"></i> Map content missing - Error</small>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if file.size < 1024 %}
-                                            {{ file.size }} B
-                                        {% elif file.size < 1024 * 1024 %}
-                                            {{ "%.1f"|format(file.size / 1024) }} KB
-                                        {% else %}
-                                            {{ "%.1f"|format(file.size / (1024 * 1024)) }} MB
                                         {% endif %}
                                     </td>
                                     <td>{{ file.modified.strftime('%Y-%m-%d %H:%M') }}</td>
@@ -114,11 +104,9 @@
             <div class="card-body">
                 <p class="small">Precinct maps are HTML files that display interactive mapping content with full HTML, CSS, and JavaScript support.</p>
                 <ul class="small">
-                    <li><span class="badge bg-primary">NC PostgreSQL</span> - Single database source on hosting platform</li>
+                    <li><span class="badge bg-primary">Precinct Map List</span> </li>
                     <li>County filtering: Only maps for your assigned county are shown</li>
-                    <li>Map content must be available in NC database or it's an error</li>
-                    <li>No fallback databases - NC PostgreSQL is the only source</li>
-                    <li>Full interactive functionality supported when content exists</li>
+                    <li>Full interactive functionality supported</li>
                 </ul>
                 <div class="alert alert-warning mt-2">
                     <small><strong>County Filter:</strong> Maps are filtered to show only precincts in your assigned county ({{ current_user.county or 'Not Set' }}). All data comes from the NC PostgreSQL database on the hosting platform.</small>
