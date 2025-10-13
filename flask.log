@@ -1,0 +1,3 @@
+nohup: ignoring input
+/home/bren/Home/Projects/HTML_CSS/precinct/.venv/lib/python3.11/site-packages/flask_admin/contrib/__init__.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  __import__('pkg_resources').declare_namespace(__name__)

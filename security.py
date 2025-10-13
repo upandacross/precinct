@@ -14,7 +14,7 @@ rate_limit_storage = defaultdict(lambda: deque())
 
 # Security headers
 SECURITY_HEADERS = {
-    'X-Frame-Options': 'DENY',
+    'X-Frame-Options': 'SAMEORIGIN',
     'X-Content-Type-Options': 'nosniff',
     'X-XSS-Protection': '1; mode=block',
     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
@@ -27,7 +27,7 @@ SECURITY_HEADERS = {
         "img-src 'self' data: https:; "
         "font-src 'self' https://cdn.jsdelivr.net; "
         "connect-src 'self'; "
-        "frame-ancestors 'none';"
+        "frame-ancestors 'self';"
     ),
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'

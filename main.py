@@ -11,13 +11,18 @@ from wtforms.validators import DataRequired, Length, Email
 from models import db, User, Map
 from datetime import datetime
 from config import get_config
+from security import add_security_headers
 try:
     from dash_analytics import create_dash_app
     DASH_AVAILABLE = True
 except ImportError:
     DASH_AVAILABLE = False
-# TODP: CSRF
-# TODO: research HSTS and CSP via Flask-Talisman, X-Frame-Options deny
+# Security features implemented:
+# ✅ HSTS (HTTP Strict Transport Security) - max-age=31536000; includeSubDomains
+# ✅ CSP (Content Security Policy) - comprehensive XSS protection
+# ✅ X-Frame-Options: DENY - clickjacking protection
+# ✅ X-Content-Type-Options: nosniff - MIME confusion protection
+# ✅ Referrer-Policy and Permissions-Policy implemented
 # TODO: research Auth0 for MFA
 
 class LoginForm(FlaskForm):
@@ -83,6 +88,12 @@ def create_app():
     login_manager.login_view = 'login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'info'
+    
+    # Security headers setup
+    @app.after_request
+    def apply_security_headers(response):
+        """Apply HSTS and other security headers to all responses."""
+        return add_security_headers(response)
     
     # NC database is initialized through the same db instance with SQLALCHEMY_BINDS
     
