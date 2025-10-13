@@ -1,5 +1,6 @@
 import dash
-from dash import dcc, html, Input, Output
+from dash import dcc, html, Input, Output, callback
+from urllib.parse import urlparse, parse_qs
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
@@ -13,17 +14,28 @@ sys.path.append('.')
 from models import db, User
 from flask_login import current_user
 
-def get_analytics_data(flask_app):
+def get_analytics_data(flask_app, user_id=None):
     """Get analytics data from the database and generate sample data."""
     database_error = None
     try:
         # Use Flask app context for database queries
         with flask_app.app_context():
-            # Get current user within Flask context
-            try:
-                current_authenticated_user = current_user if current_user.is_authenticated else None
-            except:
-                current_authenticated_user = None
+            # Get current user from session or parameter
+            current_authenticated_user = None
+            
+            if user_id:
+                # Get user by ID if provided
+                current_authenticated_user = User.query.get(user_id)
+            else:
+                # Try to get current user from Flask-Login
+                try:
+                    from flask import session
+                    if '_user_id' in session:
+                        current_authenticated_user = User.query.get(session['_user_id'])
+                    elif hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+                        current_authenticated_user = current_user
+                except:
+                    current_authenticated_user = None
             
             # Determine filter scope based on user permissions
             if current_authenticated_user and hasattr(current_authenticated_user, 'is_admin') and hasattr(current_authenticated_user, 'is_county'):
@@ -40,55 +52,94 @@ def get_analytics_data(flask_app):
                     )
                     scope_description = f"{current_authenticated_user.county} County, Precinct {current_authenticated_user.precinct}"
             else:
-                # Fallback to all users if no user context
-                base_query = User.query
-                scope_description = "All Users"
+                # No user context - return error instead of fallback data
+                raise Exception("No authenticated user context available. Please log in to view analytics.")
             
             # Get filtered user statistics
             total_users = base_query.count()
             admin_users = base_query.filter_by(is_admin=True).count()
-            county_users = base_query.filter_by(is_county=True).count()
+            county_users = base_query.filter_by(is_county=True, is_admin=False).count()  # County users who are not admin
             regular_users = total_users - admin_users - county_users
             active_users = base_query.filter_by(is_active=True).count()
             inactive_users = total_users - active_users
     except Exception as e:
         # Capture specific error details
-        database_error = f"Database Error: {str(e)}"
-        # Fallback to sample data if database is not accessible
-        total_users = 25
-        admin_users = 3
-        regular_users = 22
-        active_users = 23
-        inactive_users = 2
+        error_message = str(e)
+        if "No authenticated user context" in error_message:
+            database_error = f"Authentication Error: {error_message}"
+            # Don't show any data when there's no user context
+            total_users = 0
+            admin_users = 0
+            regular_users = 0
+            active_users = 0
+            inactive_users = 0
+            county_users = 0
+            scope_description = "No User Context"
+        else:
+            database_error = f"Database Error: {error_message}"
+            # Fallback to sample data for other database errors
+            total_users = 25
+            admin_users = 3
+            regular_users = 22
+            active_users = 23
+            inactive_users = 2
+            county_users = 0
+            scope_description = "Error - Sample Data"
     
+    # Determine user permissions for UI display
+    is_admin = False
+    is_county = False
+    try:
+        # Use Flask app context for database queries
+        with flask_app.app_context():
+            # Get current user from session or parameter
+            current_authenticated_user = None
+            
+            if user_id:
+                # Get user by ID if provided
+                current_authenticated_user = User.query.get(user_id)
+            
+            # Check permissions
+            if current_authenticated_user and hasattr(current_authenticated_user, 'is_admin') and hasattr(current_authenticated_user, 'is_county'):
+                is_admin = current_authenticated_user.is_admin
+                is_county = current_authenticated_user.is_county
+    except Exception as e:
+        # If there's an error getting user permissions, default to False
+        is_admin = False
+        is_county = False
+
     # Sample data for charts (in a real app, this would come from actual analytics)
     analytics_data = {
         'user_stats': {
             'total': total_users,
             'admins': admin_users,
-            'county': county_users if 'county_users' in locals() else 0,
+            'county': county_users,
             'regular': regular_users,
             'active': active_users,
             'inactive': inactive_users
         },
-        'scope_description': scope_description if 'scope_description' in locals() else 'All Users',
-        'monthly_signups': pd.DataFrame({
+        'user_permissions': {
+            'is_admin': is_admin,
+            'is_county': is_county
+        },
+        'scope_description': scope_description,
+        'monthly_signups': {
             'Month': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
             'Signups': [12, 19, 8, 15, 22, 13]
-        }),
-        'login_activity': pd.DataFrame({
+        },
+        'login_activity': {
             'Day': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             'Logins': [65, 59, 80, 81, 56, 55, 40]
-        }),
-        'password_strength': pd.DataFrame({
+        },
+        'password_strength': {
             'Strength': ['Republican', 'Democrat', 'UNAFFILIATED'],
             'Count': [15, 45, 40]
-        }),
-        'recent_activity': pd.DataFrame({
+        },
+        'recent_activity': {
             'Week': ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
             'Logins': [120, 150, 180, 200],
             'Registrations': [8, 12, 15, 10]
-        }),
+        },
         'database_error': database_error
     }
     
@@ -106,153 +157,81 @@ def create_dash_app(flask_app):
         ]
     )
     
-    # Get analytics data with user context
-    data = get_analytics_data(flask_app)
+    # Initially create with empty data - will be populated by callback
+    data = {
+        'user_stats': {'total': 0, 'admins': 0, 'county': 0, 'regular': 0, 'active': 0, 'inactive': 0},
+        'scope_description': 'Loading...',
+        'database_error': None,
+        'monthly_signups': {'Month': [], 'Signups': []},
+        'login_activity': {'Day': [], 'Logins': []},
+        'password_strength': {'Strength': [], 'Count': []},
+        'recent_activity': {'Week': [], 'Logins': [], 'Registrations': []}
+    }
     
-    # Create figures with error handling
-    try:
-        # User Distribution Pie Chart
-        user_dist_fig = px.pie(
-            values=[data['user_stats']['regular'], data['user_stats']['admins'], data['user_stats']['county'], data['user_stats']['inactive']],
-            names=['Regular Users', 'Admin Users', 'County Users', 'Inactive Users'],
-            title='User Type Distribution',
-            color_discrete_sequence=['#36A2EB', '#FF6384', '#4BC0C0', '#FFCE56']
-        )
-    except Exception as e:
-        # Create error figure
-        user_dist_fig = go.Figure()
-        user_dist_fig.add_annotation(
-            text=f"Chart Error: {str(e)}",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=16, color="red")
-        )
-        user_dist_fig.update_layout(title="User Distribution - Error Loading")
+    # Create placeholder figures that will be updated by callbacks
+    # User Distribution Pie Chart - placeholder
+    user_dist_fig = go.Figure()
+    user_dist_fig.add_annotation(
+        text="Loading user data...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=16, color="#666")
+    )
+    user_dist_fig.update_layout(title="Website User Types")
     user_dist_fig.update_layout(
         font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
         title_font_size=18,
         margin=dict(t=50, b=50, l=50, r=50)
     )
     
-    # Password Strength Pie Chart
-    try:
-        password_fig = px.pie(
-            data['password_strength'],
-            values='Count',
-            names='Strength',
-            title='Party Voting Distribution',
-            color_discrete_sequence=['#FF6B6B', '#FFD93D', '#6BCF7F']
-        )
-        password_fig.update_layout(
-            font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
-            title_font_size=18,
-            margin=dict(t=50, b=50, l=50, r=50)
-        )
-    except Exception as e:
-        password_fig = go.Figure()
-        password_fig.add_annotation(
-            text=f"Chart Error: {str(e)}",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=16, color="red")
-        )
-        password_fig.update_layout(title="Party Voting Distribution - Error Loading")
+    # Password Strength Pie Chart - placeholder
+    password_fig = go.Figure()
+    password_fig.add_annotation(
+        text="Loading party data...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=16, color="#666")
+    )
+    password_fig.update_layout(title="Party Voting Distribution")
     
-    # Monthly Signups Line Chart
-    try:
-        monthly_fig = px.line(
-            data['monthly_signups'],
-            x='Month',
-            y='Signups',
-            title='Monthly Voter Registrations',
-            markers=True
-        )
-        monthly_fig.update_traces(
-            line_color='#667eea',
-            line_width=3,
-            marker_size=8
-        )
-        monthly_fig.update_layout(
-            font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
-            title_font_size=18,
-            plot_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=50, b=50, l=50, r=50)
-        )
-    except Exception as e:
-        monthly_fig = go.Figure()
-        monthly_fig.add_annotation(
-            text=f"Chart Error: {str(e)}",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=16, color="red")
-        )
-        monthly_fig.update_layout(title="Monthly Voter Registrations - Error Loading")
+    # Monthly Signups Line Chart - placeholder
+    monthly_fig = go.Figure()
+    monthly_fig.add_annotation(
+        text="Loading registration data...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=16, color="#666")
+    )
+    monthly_fig.update_layout(title="Monthly Voter Registrations")
     
-    # Login Activity Bar Chart
-    try:
-        login_fig = px.bar(
-            data['login_activity'],
-            x='Day',
-            y='Logins',
-            title='Weekly Canvasing Activity',
-            color='Logins',
-            color_continuous_scale='Blues'
-        )
-        login_fig.update_layout(
-            font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
-            title_font_size=18,
-            showlegend=False,
-            plot_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=50, b=50, l=50, r=50)
-        )
-    except Exception as e:
-        login_fig = go.Figure()
-        login_fig.add_annotation(
-            text=f"Chart Error: {str(e)}",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=16, color="red")
-        )
-        login_fig.update_layout(title="Weekly Canvasing Activity - Error Loading")
+    # Login Activity Bar Chart - placeholder
+    login_fig = go.Figure()
+    login_fig.add_annotation(
+        text="Loading activity data...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=16, color="#666")
+    )
+    login_fig.update_layout(title="Weekly Canvasing Activity")
     
-    # Recent Activity Multi-line Chart
-    try:
-        recent_fig = go.Figure()
-        recent_fig.add_trace(go.Scatter(
-            x=data['recent_activity']['Week'],
-            y=data['recent_activity']['Logins'],
-            mode='lines+markers',
-            name='Registration Flyers',
-            line=dict(color='#4facfe', width=3),
-            marker=dict(size=8)
-        ))
-        recent_fig.add_trace(go.Scatter(
-            x=data['recent_activity']['Week'],
-            y=data['recent_activity']['Registrations'],
-            mode='lines+markers',
-            name='Voter Registrations',
-            line=dict(color='#43e97b', width=3),
-            marker=dict(size=8)
-        ))
-        recent_fig.update_layout(
-            title='Recent Activity Trends',
-            font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
-            title_font_size=18,
-            plot_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=50, b=50, l=50, r=50)
-        )
-    except Exception as e:
-        recent_fig = go.Figure()
-        recent_fig.add_annotation(
-            text=f"Chart Error: {str(e)}",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=16, color="red")
-        )
-        recent_fig.update_layout(title="Recent Activity Trends - Error Loading")
+    # Recent Activity Multi-line Chart - placeholder
+    recent_fig = go.Figure()
+    recent_fig.add_annotation(
+        text="Loading trend data...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=16, color="#666")
+    )
+    recent_fig.update_layout(title="Recent Activity Trends")
     
     # Define the layout
     dash_app.layout = html.Div([
+        # URL tracking component
+        dcc.Location(id='url', refresh=False),
+        
+        # Store component to hold user data
+        dcc.Store(id='analytics-data-store'),
+        
         # Header
         html.Div([
             html.Div([
@@ -295,7 +274,7 @@ def create_dash_app(flask_app):
         html.Div([
             html.Div([
                 html.Div([
-                    html.H2(str(data['user_stats']['total']), className="stats-number text-white"),
+                    html.H2("0", id="total-users-stat", className="stats-number text-white"),
                     html.P([html.I(className="fas fa-users"), " Total Users"], className="stats-label text-white")
                 ], className="text-center p-3", style={
                     'background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -305,7 +284,7 @@ def create_dash_app(flask_app):
             
             html.Div([
                 html.Div([
-                    html.H2(str(data['user_stats']['active']), className="stats-number text-white"),
+                    html.H2("0", id="active-users-stat", className="stats-number text-white"),
                     html.P([html.I(className="fas fa-user-check"), " Active Users"], className="stats-label text-white")
                 ], className="text-center p-3", style={
                     'background': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -315,27 +294,27 @@ def create_dash_app(flask_app):
             
             html.Div([
                 html.Div([
-                    html.H2(str(data['user_stats']['admins']), className="stats-number text-white"),
+                    html.H2("0", id="admin-users-stat", className="stats-number text-white"),
                     html.P([html.I(className="fas fa-user-shield"), " Admins"], className="stats-label text-white")
                 ], className="text-center p-3", style={
                     'background': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                     'border-radius': '10px'
                 })
-            ], className="col-md-2"),
+            ], id="admin-card", className="col-md-2", style={'display': 'none'}),
             
             html.Div([
                 html.Div([
-                    html.H2(str(data['user_stats']['county']), className="stats-number text-white"),
+                    html.H2("0", id="county-users-stat", className="stats-number text-white"),
                     html.P([html.I(className="fas fa-user-tie"), " County"], className="stats-label text-white")
                 ], className="text-center p-3", style={
                     'background': 'linear-gradient(135deg, #fd746c 0%, #ff9068 100%)',
                     'border-radius': '10px'
                 })
-            ], className="col-md-2"),
+            ], id="county-card", className="col-md-2", style={'display': 'none'}),
             
             html.Div([
                 html.Div([
-                    html.H2(str(data['user_stats']['regular']), className="stats-number text-white"),
+                    html.H2("0", id="regular-users-stat", className="stats-number text-white"),
                     html.P([html.I(className="fas fa-user"), " Regular"], className="stats-label text-white")
                 ], className="text-center p-3", style={
                     'background': 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
@@ -345,7 +324,7 @@ def create_dash_app(flask_app):
             
             html.Div([
                 html.Div([
-                    html.H2(str(data['user_stats']['inactive']), className="stats-number text-white"),
+                    html.H2("0", id="inactive-users-stat", className="stats-number text-white"),
                     html.P([html.I(className="fas fa-user-times"), " Inactive"], className="stats-label text-white")
                 ], className="text-center p-3", style={
                     'background': 'linear-gradient(135deg, #a8a8a8 0%, #7b7b7b 100%)',
@@ -358,7 +337,7 @@ def create_dash_app(flask_app):
         html.Div([
             html.Div([
                 html.Div([
-                    dcc.Graph(figure=user_dist_fig, style={'height': '400px'})
+                    dcc.Graph(id='user-distribution-chart', figure=user_dist_fig, style={'height': '400px'})
                 ], className="chart-card p-3", style={
                     'background': 'white',
                     'border-radius': '10px',
@@ -368,7 +347,7 @@ def create_dash_app(flask_app):
             
             html.Div([
                 html.Div([
-                    dcc.Graph(figure=password_fig, style={'height': '400px'})
+                    dcc.Graph(id='password-strength-chart', figure=password_fig, style={'height': '400px'})
                 ], className="chart-card p-3", style={
                     'background': 'white',
                     'border-radius': '10px',
@@ -381,7 +360,7 @@ def create_dash_app(flask_app):
         html.Div([
             html.Div([
                 html.Div([
-                    dcc.Graph(figure=monthly_fig, style={'height': '400px'})
+                    dcc.Graph(id='monthly-signups-chart', figure=monthly_fig, style={'height': '400px'})
                 ], className="chart-card p-3", style={
                     'background': 'white',
                     'border-radius': '10px',
@@ -394,7 +373,7 @@ def create_dash_app(flask_app):
         html.Div([
             html.Div([
                 html.Div([
-                    dcc.Graph(figure=login_fig, style={'height': '400px'})
+                    dcc.Graph(id='login-activity-chart', figure=login_fig, style={'height': '400px'})
                 ], className="chart-card p-3", style={
                     'background': 'white',
                     'border-radius': '10px',
@@ -404,7 +383,7 @@ def create_dash_app(flask_app):
             
             html.Div([
                 html.Div([
-                    dcc.Graph(figure=recent_fig, style={'height': '400px'})
+                    dcc.Graph(id='recent-activity-chart', figure=recent_fig, style={'height': '400px'})
                 ], className="chart-card p-3", style={
                     'background': 'white',
                     'border-radius': '10px',
@@ -451,15 +430,328 @@ def create_dash_app(flask_app):
         'min-height': '100vh'
     })
     
-    # Callback to dynamically update the analytics scope text
+        # Callback to load analytics data based on URL parameters
+    @dash_app.callback(
+        Output('analytics-data-store', 'data'),
+        Input('url', 'href')
+    )
+    def load_analytics_data(href):
+        if href:
+            try:
+                parsed_url = urlparse(href)
+                query_params = parse_qs(parsed_url.query)
+                user_id = query_params.get('user_id', [None])[0]
+                
+                if user_id:
+                    user_id = int(user_id)
+                    return get_analytics_data(flask_app, user_id)
+                else:
+                    return get_analytics_data(flask_app, None)
+            except:
+                return get_analytics_data(flask_app, None)
+        return get_analytics_data(flask_app, None)
+    
+    # Callback to update scope text from stored data
     @dash_app.callback(
         Output('analytics-scope-text', 'children'),
-        Input('scope-interval', 'n_intervals')
+        Input('analytics-data-store', 'data')
     )
-    def update_scope_text(n):
-        # Get fresh user context data when page loads
-        current_data = get_analytics_data(flask_app)
-        return f"Analytics for: {current_data['scope_description']}"
+    def update_scope_text(stored_data):
+        if stored_data:
+            return f"Analytics for: {stored_data['scope_description']}"
+        return "Analytics for: Loading..."
+    
+    # Callback to update user distribution chart
+    @dash_app.callback(
+        Output('user-distribution-chart', 'figure'),
+        Input('analytics-data-store', 'data')
+    )
+    def update_user_distribution_chart(stored_data):
+        if stored_data and stored_data.get('user_stats'):
+            stats = stored_data['user_stats']
+            try:
+                fig = px.pie(
+                    values=[stats['regular'], stats['admins'], stats['county'], stats['inactive']],
+                    names=['Regular Users', 'Admin Users', 'County Users', 'Inactive Users'],
+                    title='Website User Types',
+                    color_discrete_sequence=['#36A2EB', '#FF6384', '#4BC0C0', '#FFCE56']
+                )
+                fig.update_layout(
+                    font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
+                    title_font_size=18,
+                    margin=dict(t=50, b=50, l=50, r=50)
+                )
+                return fig
+            except Exception as e:
+                error_fig = go.Figure()
+                error_fig.add_annotation(
+                    text=f"Chart Error: {str(e)}",
+                    xref="paper", yref="paper",
+                    x=0.5, y=0.5, showarrow=False,
+                    font=dict(size=16, color="red")
+                )
+                error_fig.update_layout(title="Website User Types - Error")
+                return error_fig
+        
+        # Return placeholder figure
+        loading_fig = go.Figure()
+        loading_fig.add_annotation(
+            text="Loading user data...",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=16, color="#666")
+        )
+        loading_fig.update_layout(title="Website User Types")
+        return loading_fig
+    
+    # Callback to update stats cards
+    @dash_app.callback(
+        [
+            Output('total-users-stat', 'children'),
+            Output('active-users-stat', 'children'),
+            Output('admin-users-stat', 'children'),
+            Output('county-users-stat', 'children'),
+            Output('regular-users-stat', 'children'),
+            Output('inactive-users-stat', 'children')
+        ],
+        Input('analytics-data-store', 'data')
+    )
+    def update_stats_cards(stored_data):
+        if stored_data and stored_data.get('user_stats'):
+            stats = stored_data['user_stats']
+            return (
+                str(stats.get('total', 0)),
+                str(stats.get('active', 0)),
+                str(stats.get('admins', 0)),
+                str(stats.get('county', 0)),
+                str(stats.get('regular', 0)),
+                str(stats.get('inactive', 0))
+            )
+        # Return zeros if no data
+        return ("0", "0", "0", "0", "0", "0")
+    
+    # Callback to show/hide admin and county cards based on permissions
+    @dash_app.callback(
+        [
+            Output('admin-card', 'style'),
+            Output('county-card', 'style')
+        ],
+        Input('analytics-data-store', 'data')
+    )
+    def update_card_visibility(stored_data):
+        # Default styles (hidden)
+        admin_style = {'display': 'none'}
+        county_style = {'display': 'none'}
+        
+        if stored_data and stored_data.get('user_permissions'):
+            permissions = stored_data['user_permissions']
+            
+            # Show admin card if user is admin or county
+            if permissions.get('is_admin') or permissions.get('is_county'):
+                admin_style = {'display': 'block'}
+                county_style = {'display': 'block'}
+        
+        return admin_style, county_style
+    
+    # Callback to update password strength chart (political affiliation)
+    @dash_app.callback(
+        Output('password-strength-chart', 'figure'),
+        Input('analytics-data-store', 'data')
+    )
+    def update_password_strength_chart(stored_data):
+        if stored_data and stored_data.get('password_strength'):
+            data = stored_data['password_strength']
+            try:
+                fig = px.bar(
+                    x=data['Strength'],
+                    y=data['Count'],
+                    title='Political Affiliation Distribution',
+                    color=data['Strength'],
+                    color_discrete_sequence=['#FF6B6B', '#4ECDC4', '#45B7D1']
+                )
+                fig.update_layout(
+                    font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
+                    title_font_size=18,
+                    xaxis_title="Affiliation",
+                    yaxis_title="Count",
+                    margin=dict(t=50, b=50, l=50, r=50)
+                )
+                return fig
+            except Exception as e:
+                error_fig = go.Figure()
+                error_fig.add_annotation(
+                    text=f"Chart Error: {str(e)}",
+                    xref="paper", yref="paper",
+                    x=0.5, y=0.5, showarrow=False,
+                    font=dict(size=16, color="red")
+                )
+                return error_fig
+        
+        # Return loading figure
+        loading_fig = go.Figure()
+        loading_fig.add_annotation(
+            text="Loading affiliation data...",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=16, color="#666")
+        )
+        loading_fig.update_layout(title="Political Affiliation Distribution")
+        return loading_fig
+    
+    # Callback to update monthly signups chart
+    @dash_app.callback(
+        Output('monthly-signups-chart', 'figure'),
+        Input('analytics-data-store', 'data')
+    )
+    def update_monthly_signups_chart(stored_data):
+        if stored_data and stored_data.get('monthly_signups'):
+            data = stored_data['monthly_signups']
+            try:
+                fig = px.line(
+                    x=data['Month'],
+                    y=data['Signups'],
+                    title='Monthly User Signups',
+                    markers=True
+                )
+                fig.update_traces(line_color='#36A2EB', marker_size=8)
+                fig.update_layout(
+                    font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
+                    title_font_size=18,
+                    xaxis_title="Month",
+                    yaxis_title="New Signups",
+                    margin=dict(t=50, b=50, l=50, r=50)
+                )
+                return fig
+            except Exception as e:
+                error_fig = go.Figure()
+                error_fig.add_annotation(
+                    text=f"Chart Error: {str(e)}",
+                    xref="paper", yref="paper",
+                    x=0.5, y=0.5, showarrow=False,
+                    font=dict(size=16, color="red")
+                )
+                return error_fig
+        
+        # Return loading figure
+        loading_fig = go.Figure()
+        loading_fig.add_annotation(
+            text="Loading signup data...",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=16, color="#666")
+        )
+        loading_fig.update_layout(title="Monthly User Signups")
+        return loading_fig
+    
+    # Callback to update login activity chart
+    @dash_app.callback(
+        Output('login-activity-chart', 'figure'),
+        Input('analytics-data-store', 'data')
+    )
+    def update_login_activity_chart(stored_data):
+        if stored_data and stored_data.get('login_activity'):
+            data = stored_data['login_activity']
+            try:
+                fig = px.bar(
+                    x=data['Day'],
+                    y=data['Logins'],
+                    title='Daily Mobilize Signups',
+                    color=data['Logins'],
+                    color_continuous_scale='Blues'
+                )
+                fig.update_layout(
+                    font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
+                    title_font_size=18,
+                    xaxis_title="Day of Week",
+                    yaxis_title="Mobilize Signup Count",
+                    margin=dict(t=50, b=50, l=50, r=50),
+                    showlegend=False
+                )
+                return fig
+            except Exception as e:
+                error_fig = go.Figure()
+                error_fig.add_annotation(
+                    text=f"Chart Error: {str(e)}",
+                    xref="paper", yref="paper",
+                    x=0.5, y=0.5, showarrow=False,
+                    font=dict(size=16, color="red")
+                )
+                return error_fig
+        
+        # Return loading figure
+        loading_fig = go.Figure()
+        loading_fig.add_annotation(
+            text="Loading activity data...",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=16, color="#666")
+        )
+        loading_fig.update_layout(title="Daily Mobilize Signups")
+        return loading_fig
+    
+    # Callback to update recent activity chart
+    @dash_app.callback(
+        Output('recent-activity-chart', 'figure'),
+        Input('analytics-data-store', 'data')
+    )
+    def update_recent_activity_chart(stored_data):
+        if stored_data and stored_data.get('recent_activity'):
+            data = stored_data['recent_activity']
+            try:
+                # Use plotly graph objects for more reliable chart creation
+                fig = go.Figure()
+                
+                # Add Mobilize trace
+                fig.add_trace(go.Scatter(
+                    x=data['Week'],
+                    y=data['Logins'],
+                    mode='lines+markers',
+                    name='Mobilize',
+                    line=dict(color='#36A2EB', width=3),
+                    marker=dict(size=8)
+                ))
+                
+                # Add Registrations trace (scaled for visibility)
+                registrations_scaled = [x * 10 for x in data['Registrations']]
+                fig.add_trace(go.Scatter(
+                    x=data['Week'],
+                    y=registrations_scaled,
+                    mode='lines+markers',
+                    name='Registrations (×10)',
+                    line=dict(color='#FF6384', width=3),
+                    marker=dict(size=8)
+                ))
+                
+                fig.update_layout(
+                    title='Recent Activity Trends',
+                    font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
+                    title_font_size=18,
+                    xaxis_title="Week",
+                    yaxis_title="Activity Count",
+                    margin=dict(t=50, b=50, l=50, r=50),
+                    legend=dict(x=0.02, y=0.98, title="Activity Type")
+                )
+                return fig
+            except Exception as e:
+                error_fig = go.Figure()
+                error_fig.add_annotation(
+                    text=f"Chart Error: {str(e)}",
+                    xref="paper", yref="paper",
+                    x=0.5, y=0.5, showarrow=False,
+                    font=dict(size=16, color="red")
+                )
+                return error_fig
+        
+        # Return loading figure
+        loading_fig = go.Figure()
+        loading_fig.add_annotation(
+            text="Loading trend data...",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=16, color="#666")
+        )
+        loading_fig.update_layout(title="Recent Activity Trends")
+        return loading_fig
     
     return dash_app
 

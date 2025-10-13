@@ -429,8 +429,8 @@ def create_app():
     def analysis():
         """Precinct Analytics page with Dash charts and graphs."""
         if DASH_AVAILABLE:
-            # Redirect to Dash analytics app
-            return redirect('/dash/analytics/')
+            # Pass user ID as query parameter to Dash app for authentication
+            return redirect(f'/dash/analytics/?user_id={current_user.id}')
         else:
             # Fallback to simple message if Dash is not available
             flash('Dash analytics is not available. Please install dash, plotly, and pandas packages.', 'warning')
