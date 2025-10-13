@@ -74,16 +74,16 @@
                                     <td>{{ user.county }}</td>
                                 </tr>
                                 {% endif %}
-                                {% if user.map %}
+                                {% if user.precinct %}
                                 <tr>
-                                    <td><strong>Map:</strong></td>
+                                    <td><strong>Assigned Map:</strong></td>
                                     <td>
-                                        {{ user.map }}
+                                        Precinct {{ user.precinct }}
                                         <div class="btn-group ms-2" role="group">
-                                            <a href="{{ url_for('view_user_map', filename=user.map) }}" class="btn btn-sm btn-outline-primary">
+                                            <a href="{{ url_for('view_user_map', filename=user.precinct + '.html') }}" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-map"></i> View Map
                                             </a>
-                                            <a href="{{ url_for('view_file_new_tab', filename=user.map) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                            <a href="{{ url_for('view_file_new_tab', filename=user.precinct + '.html') }}" target="_blank" class="btn btn-sm btn-outline-secondary">
                                                 <i class="fas fa-external-link-alt"></i> New Tab
                                             </a>
                                         </div>

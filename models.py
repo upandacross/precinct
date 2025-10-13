@@ -26,10 +26,9 @@ class User(UserMixin, db.Model):
     precinct = db.Column(db.String(100), nullable=True)
     state = db.Column(db.String(50), nullable=True)
     county = db.Column(db.String(100), nullable=True)
-    map = db.Column(db.String(255), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     
-    def __init__(self, username, email, password, is_admin=False, is_county=False, phone=None, role=None, precinct=None, state=None, county=None, map=None, notes=None):
+    def __init__(self, username, email, password, is_admin=False, is_county=False, phone=None, role=None, precinct=None, state=None, county=None, notes=None):
         self.username = username
         self.email = email
         self.password = password
@@ -41,7 +40,6 @@ class User(UserMixin, db.Model):
         self.precinct = precinct
         self.state = state
         self.county = county
-        self.map = map
         self.notes = notes
     
     def set_password(self, password):
