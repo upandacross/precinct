@@ -23,7 +23,6 @@
                             <thead>
                                 <tr>
                                     <th><i class="fas fa-file"></i> Document</th>
-                                    <th><i class="fas fa-database"></i> Source</th>
                                     <th><i class="fas fa-info-circle"></i> Size</th>
                                     <th><i class="fas fa-calendar"></i> Modified</th>
                                     <th><i class="fas fa-cogs"></i> Actions</th>
@@ -40,9 +39,6 @@
                                         {% if not file.has_content %}
                                             <br><small class="badge bg-danger text-white"><i class="fas fa-exclamation-triangle"></i> Map content missing - Error</small>
                                         {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary"><i class="fas fa-database"></i> NC PostgreSQL</span>
                                     </td>
                                     <td>
                                         {% if file.size < 1024 %}
