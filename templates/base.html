@@ -142,13 +142,15 @@
                                 <i class="fas fa-user"></i> Profile
                             </a>
                         </li>
-                        {% if not current_user.is_admin %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('analysis') }}">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('analysis') }}">
+                                {% if current_user.is_admin or current_user.is_county %}
+                                    <i class="fas fa-chart-line"></i> County Analytics
+                                {% else %}
                                     <i class="fas fa-chart-line"></i> Precinct Analytics
-                                </a>
-                            </li>
-                        {% endif %}
+                                {% endif %}
+                            </a>
+                        </li>
                         {% if current_user.is_admin or current_user.is_county %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('static_content') }}">
