@@ -18,7 +18,6 @@ except ImportError:
     DASH_AVAILABLE = False
 # TODP: CSRF
 # TODO: research HSTS and CSP via Flask-Talisman, X-Frame-Options deny
-# TODO: turn off DEBUG
 # TODO: research Auth0 for MFA
 
 class LoginForm(FlaskForm):
@@ -215,17 +214,13 @@ def create_app():
             if not map_record or not map_record.map:
                 return None
             
-            # If map field contains just a filename, try to load from static_html directory
+            # Check if map field contains a filename reference (which is an error - should be full HTML content)
             if map_record.map.endswith('.html') and len(map_record.map) < 50:
-                static_content = get_static_html_content(map_record.map)
-                if static_content is None:
-                    # Static file referenced by database but not found
-                    app.logger.error(f'Database references static file {map_record.map} for user {user.username} but file not found')
-                    return create_error_page("Database Error", 
-                        f"Map file '{map_record.map}' referenced in database but not found in static directory.")
-                return static_content
+                app.logger.error(f'Database contains filename reference {map_record.map} for user {user.username} - should contain full HTML content')
+                return create_error_page("Database Error", 
+                    f"Map content missing from database for user {user.username}. Only filename reference found.")
             
-            # Otherwise, assume it's HTML content stored directly in the database
+            # Map field should contain full HTML content stored directly in the database
             return map_record.map
             
         except Exception as e:
@@ -234,15 +229,24 @@ def create_app():
                 "Failed to retrieve map from database. Please try again or contact support.")
     
     def get_map_content_by_filename(filename):
-        """Get map content by filename, checking database first, then static files."""
+        """Get map content by filename using current user's state/county context."""
         try:
             # Extract precinct number from filename (e.g., "999.html" -> "999")
             if filename.endswith('.html'):
                 precinct = filename[:-5]  # Remove .html extension
                 
-                # Try to find in database by precinct number
-                # We don't know the state/county, so we'll search for any map with this precinct
-                map_record = Map.query.filter_by(precinct=precinct).first()
+                # Use current user's state and county to find the correct map
+                if not current_user or not current_user.state or not current_user.county:
+                    app.logger.error(f'Cannot lookup map {filename} - user has no state/county context')
+                    return create_error_page("Access Error", 
+                        "Your state/county information is not set. Please contact an administrator.")
+                
+                # Find map using state, county, and precinct as composite key
+                map_record = Map.query.filter_by(
+                    state=current_user.state,
+                    county=current_user.county,
+                    precinct=precinct
+                ).first()
                 
                 if map_record and map_record.map:
                     # If it's stored HTML content, return it
@@ -250,55 +254,24 @@ def create_app():
                         app.logger.info(f'Serving map {filename} from database (full content) for {map_record.state} {map_record.county} Precinct {map_record.precinct}')
                         return map_record.map
                     
-                    # If it's a filename reference, load the static file
-                    static_content = get_static_html_content(map_record.map)
-                    if static_content is None:
-                        app.logger.error(f'Database references static file {map_record.map} for {filename} but file not found')
-                        return create_error_page("Database Error", 
-                            f"Map file '{map_record.map}' referenced in database but not found in static directory.")
-                    app.logger.info(f'Serving map {filename} from database reference to static file {map_record.map}')
-                    return static_content
-            
-            # Also try searching in the map field for filename references (legacy support)
-            map_record = Map.query.filter(Map.map.like(f'%{filename}%')).first()
-            if map_record and map_record.map:
-                if map_record.map == filename:  # Exact filename match
-                    static_content = get_static_html_content(filename)
-                    if static_content is None:
-                        app.logger.error(f'Database references static file {filename} but file not found')
-                        return create_error_page("Database Error", 
-                            f"Map file '{filename}' referenced in database but not found in static directory.")
-                    app.logger.info(f'Serving map {filename} from database reference to static file')
-                    return static_content
+                    # If it's a filename reference, this is an error - should contain full HTML content
+                    app.logger.error(f'Database contains filename reference {map_record.map} for {filename} in {current_user.state} {current_user.county} - should contain full HTML content')
+                    return create_error_page("Database Error", 
+                        f"Map content missing from database for {filename}. Only filename reference found.")
+                
+                # Map not found for this state/county/precinct combination
+                app.logger.error(f'Map {filename} not found in database for {current_user.state} {current_user.county}')
+                return create_error_page("Map Not Found", 
+                    f"Map {filename} not found for {current_user.state} {current_user.county}.")
             
         except Exception as e:
             app.logger.error(f'Database error retrieving map by filename {filename}: {str(e)}')
             return create_error_page("Database Error", 
                 "Failed to retrieve map from database. Please try again or contact support.")
         
-        # Fall back to static file
-        static_content = get_static_html_content(filename)
-        if static_content:
-            app.logger.info(f'Serving map {filename} from static file fallback (no database match found)')
-            return static_content
-        
-        # Neither database nor static file found
+        # No fallback to static files - all content must come from database
+        app.logger.error(f'Invalid filename format: {filename}')
         return None
-    
-    def get_static_html_content(filename):
-        """Get HTML content from static_html directory."""
-        try:
-            static_html_dir = os.path.join(app.root_path, app.config['STATIC_HTML_DIR'])
-            file_path = os.path.join(static_html_dir, filename)
-            
-            if not os.path.exists(file_path) or not filename.endswith('.html'):
-                return None
-            
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return f.read()
-        except Exception as e:
-            app.logger.error(f'Error reading static HTML file {filename}: {str(e)}')
-            return None
     
     def user_can_access_map(user, filename_or_precinct):
         """Check if user can access a specific map."""

@@ -3,14 +3,35 @@
 {% block title %}Maps List - Precinct Member's Application{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1><i class="fas fa-map"></i> Maps List</h1>
-        <p class="lead">Browse and view precinct maps and related resources.</p>
-    </div>
-</div>
+<style>
+    /* Force background to show */
+    .main-content {
+        min-height: calc(100vh - 56px); /* Account for navbar height */
+        background: url("{{ url_for('static', filename='img/bg_faded.jpg') }}") no-repeat center center fixed;
+        background-size: cover;
+        background-attachment: fixed;
+    }
+    .maps-container {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        margin: 2rem auto;
+        max-width: 95%;
+    }
+</style>
 
-<div class="row mt-4">
+<div class="main-content">
+    <div class="container mt-4">
+        <div class="maps-container">
+        <div class="row">
+            <div class="col-12">
+                <h1><i class="fas fa-map"></i> Maps List</h1>
+                <p class="lead">Browse and view precinct maps and related resources.</p>
+            </div>
+        </div>
+
+        <div class="row mt-4">
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
@@ -64,8 +85,8 @@
                     </div>
                 {% else %}
                     <div class="alert alert-info">
-                        <h6><i class="fas fa-info-circle"></i> No Documents Found</h6>
-                        <p class="mb-0">No static HTML files are currently available. Add HTML files to the <code>static_html</code> directory to display them here.</p>
+                        <h6><i class="fas fa-info-circle"></i> No Maps Found</h6>
+                        <p class="mb-0">No maps are currently available for your county in the NC database. Please contact an administrator.</p>
                     </div>
                 {% endif %}
             </div>
@@ -109,7 +130,7 @@
                     <li>Full interactive functionality supported</li>
                 </ul>
                 <div class="alert alert-warning mt-2">
-                    <small><strong>County Filter:</strong> Maps are filtered to show only precincts in your assigned county ({{ current_user.county or 'Not Set' }}). All data comes from the NC PostgreSQL database on the hosting platform.</small>
+                    <small><strong>County Filter:</strong> Maps are filtered to show only precincts in your assigned county ({{ current_user.county or 'Not Set' }}). All data comes from the NC database.</small>
                 </div>
             </div>
         </div>

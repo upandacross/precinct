@@ -37,7 +37,6 @@ class Config:
     FLASK_ADMIN_SWATCH = 'cerulean'  # Bootstrap theme for admin
     
     # Application Specific Settings
-    STATIC_HTML_DIR = 'static_html'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file upload
     
     # Default Admin User Configuration
