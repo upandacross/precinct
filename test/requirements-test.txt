@@ -1,0 +1,11 @@
+# Test dependencies for the Precinct application
+pytest>=7.0.0
+pytest-flask>=1.2.0
+pytest-cov>=4.0.0
+requests-mock>=1.10.0
+# Optional dependencies for enhanced testing
+selenium>=4.0.0  # For browser-based integration tests
+webdriver-manager>=3.8.0  # For managing browser drivers
+coverage>=6.0.0  # For coverage reporting
+pytest-xdist>=3.0.0  # For parallel test execution
+pytest-benchmark>=4.0.0  # For performance benchmarking

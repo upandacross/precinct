@@ -1,3 +1,21 @@
 nohup: ignoring input
 /home/bren/Home/Projects/HTML_CSS/precinct/.venv/lib/python3.11/site-packages/flask_admin/contrib/__init__.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
   __import__('pkg_resources').declare_namespace(__name__)
+Starting Waitress WSGI server on http://0.0.0.0:8080
+Traceback (most recent call last):
+  File "/home/bren/Home/Projects/HTML_CSS/precinct/wsgi.py", line 16, in <module>
+    serve(application, host='0.0.0.0', port=8080)
+  File "/home/bren/Home/Projects/HTML_CSS/precinct/.venv/lib/python3.11/site-packages/waitress/__init__.py", line 13, in serve
+    server = _server(app, **kw)
+             ^^^^^^^^^^^^^^^^^^
+  File "/home/bren/Home/Projects/HTML_CSS/precinct/.venv/lib/python3.11/site-packages/waitress/server.py", line 78, in create_server
+    last_serv = TcpWSGIServer(
+                ^^^^^^^^^^^^^^
+  File "/home/bren/Home/Projects/HTML_CSS/precinct/.venv/lib/python3.11/site-packages/waitress/server.py", line 243, in __init__
+    self.bind_server_socket()
+  File "/home/bren/Home/Projects/HTML_CSS/precinct/.venv/lib/python3.11/site-packages/waitress/server.py", line 364, in bind_server_socket
+    self.bind(sockaddr)
+  File "/home/bren/Home/Projects/HTML_CSS/precinct/.venv/lib/python3.11/site-packages/waitress/wasyncore.py", line 374, in bind
+    return self.socket.bind(addr)
+           ^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 98] Address already in use
