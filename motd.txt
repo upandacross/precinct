@@ -1,2 +1,3 @@
 🔒 Security Notice: Your session will automatically timeout after 30 minutes of inactivity.
 For support or questions, contact Bren.
+Last updated: October 12, 2025
