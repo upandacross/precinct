@@ -100,6 +100,10 @@ class TestingConfig(Config):
     # Disable CSRF for testing
     WTF_CSRF_ENABLED = False
     
+    # Disable rate limiting for testing
+    RATELIMIT_ENABLED = False
+    RATELIMIT_DEFAULT = "100000 per minute"  # Effectively unlimited for tests
+    
     # Shorter session times for testing
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=5)
 

@@ -75,12 +75,34 @@ def create_app():
     db.init_app(app)
     
     # Flask-Limiter setup
-    limiter = Limiter(
-        key_func=get_remote_address,
-        default_limits=["200 per day", "50 per hour"],
-        storage_uri=app.config.get('RATELIMIT_STORAGE_URL', 'memory://')
-    )
-    limiter.init_app(app)
+    # For tests, conditionally disable rate limiting completely
+    if app.config.get('RATELIMIT_ENABLED', True):
+        default_limits = ["200 per day", "50 per hour"]
+        limiter = Limiter(
+            key_func=get_remote_address,
+            default_limits=default_limits,
+            storage_uri=app.config.get('RATELIMIT_STORAGE_URL', 'memory://')
+        )
+        limiter.init_app(app)
+    else:
+        # For testing: create a dummy limiter that doesn't actually limit
+        class DummyLimiter:
+            def __init__(self):
+                pass
+            def limit(self, *args, **kwargs):
+                def decorator(f):
+                    return f  # Return function unchanged
+                return decorator
+            def init_app(self, app):
+                pass
+            def __getattr__(self, name):
+                # Return a dummy method for any other limiter attributes/methods
+                def dummy(*args, **kwargs):
+                    def decorator(f):
+                        return f
+                    return decorator
+                return dummy
+        limiter = DummyLimiter()
     
     # Flask-Login setup
     login_manager = LoginManager()
@@ -743,8 +765,12 @@ document.addEventListener('DOMContentLoaded', function() {
     @app.errorhandler(429)
     def ratelimit_handler(e):
         """Handle rate limit exceeded errors."""
-        flash('Rate limit exceeded. Please try again later.', 'warning')
-        return render_template('dashboard.html', user=current_user), 429
+        if current_user.is_authenticated and hasattr(current_user, 'created_at'):
+            flash('Rate limit exceeded. Please try again later.', 'warning')
+            return render_template('dashboard.html', user=current_user), 429
+        else:
+            # For unauthenticated users or users without full attributes, redirect to login
+            return render_template('login.html', form=LoginForm()), 429
     
     def init_db():
         """Initialize database with tables and create admin user if none exists."""

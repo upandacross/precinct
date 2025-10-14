@@ -28,13 +28,14 @@ class User(UserMixin, db.Model):
     county = db.Column(db.String(100), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     
-    def __init__(self, username, email, password, is_admin=False, is_county=False, phone=None, role=None, precinct=None, state=None, county=None, notes=None):
+    def __init__(self, username, email, password, is_admin=False, is_county=False, is_active=True, phone=None, role=None, precinct=None, state=None, county=None, notes=None):
         self.username = username
         self.email = email
         self.password = password
         self.set_password(password)
         self.is_admin = is_admin
         self.is_county = is_county
+        self.is_active = is_active
         self.phone = phone
         self.role = role
         self.precinct = precinct
@@ -82,12 +83,17 @@ class Map(db.Model):
     precinct = db.Column(db.String(100), nullable=False, index=True)
     map = db.Column(db.Text, nullable=True)  # Store HTML content
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    def __init__(self, state, county, precinct, map=None):
+    def __init__(self, state, county, precinct, map=None, created_at=None, updated_at=None):
         self.state = state
         self.county = county
         self.precinct = precinct
         self.map = map
+        if created_at:
+            self.created_at = created_at
+        if updated_at:
+            self.updated_at = updated_at
     
     @staticmethod
     def get_map_for_user(user):

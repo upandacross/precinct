@@ -24,6 +24,9 @@ from models import db, User, Map
 @pytest.fixture(scope='session')
 def app():
     """Create application for the tests."""
+    # Set environment variable for testing configuration
+    os.environ['FLASK_ENV'] = 'testing'
+    
     # Create a temporary file for the test database
     db_fd, db_path = tempfile.mkstemp(suffix='.db')
     
@@ -38,8 +41,9 @@ def app():
         'SESSION_WARNING_MINUTES': 5,
         'DEFAULT_ADMIN_USERNAME': 'test_admin',
         'DEFAULT_ADMIN_EMAIL': 'admin@test.com',
-        'DEFAULT_ADMIN_PASSWORD': 'test_admin_password',
+        'DEFAULT_ADMIN_PASSWORD': 'test_admin_password_unique',
         'RATELIMIT_STORAGE_URL': 'memory://',
+        'RATELIMIT_ENABLED': False,  # Disable rate limiting for tests
         'LOGIN_DISABLED': False,  # We want to test login functionality
     }
     
@@ -79,7 +83,15 @@ def runner(app):
 def db_session(app):
     """Database session for tests."""
     with app.app_context():
-        yield db
+        # Clear existing data before each test
+        db.session.query(User).delete()
+        db.session.query(Map).delete()
+        db.session.commit()
+        yield db.session
+        # Clean up after test
+        db.session.query(User).delete() 
+        db.session.query(Map).delete()
+        db.session.commit()
 
 
 @pytest.fixture
@@ -89,7 +101,7 @@ def admin_user(app, db_session):
         user = User(
             username='test_admin',
             email='admin@test.com',
-            password='admin_password',
+            password='admin_password_unique',
             phone='555-0001',
             role='admin',
             precinct='001',
@@ -115,7 +127,7 @@ def regular_user(app, db_session):
         user = User(
             username='test_user',
             email='user@test.com',
-            password='user_password',
+            password='user_password_unique',
             phone='555-0002',
             role='voter',
             precinct='012',
@@ -140,7 +152,7 @@ def county_user(app, db_session):
         user = User(
             username='test_county',
             email='county@test.com',
-            password='county_password',
+            password='county_password_unique',
             phone='555-0003',
             role='county_admin',
             precinct='000',
@@ -165,7 +177,7 @@ def inactive_user(app, db_session):
         user = User(
             username='inactive_user',
             email='inactive@test.com',
-            password='inactive_password',
+            password='inactive_password_unique',
             phone='555-0004',
             role='voter',
             precinct='999',
@@ -266,7 +278,7 @@ def authenticated_client(client, regular_user):
     # Login the user
     response = client.post('/login', data={
         'username': regular_user.username,
-        'password': 'user_password',
+        'password': 'user_password_unique',
         'submit': 'Sign In'
     }, follow_redirects=True)
     
@@ -280,7 +292,7 @@ def admin_client(client, admin_user):
     # Login the admin user
     response = client.post('/login', data={
         'username': admin_user.username,
-        'password': 'admin_password',
+        'password': 'admin_password_unique',
         'submit': 'Sign In'
     }, follow_redirects=True)
     
@@ -294,7 +306,7 @@ def county_client(client, county_user):
     # Login the county user
     response = client.post('/login', data={
         'username': county_user.username,
-        'password': 'county_password',
+        'password': 'county_password_unique',
         'submit': 'Sign In'
     }, follow_redirects=True)
     
@@ -339,17 +351,17 @@ def pytest_configure(config):
 TEST_USERS = {
     'admin': {
         'username': 'test_admin',
-        'password': 'admin_password',
+        'password': 'admin_password_unique',
         'email': 'admin@test.com'
     },
     'user': {
         'username': 'test_user',
-        'password': 'user_password',
+        'password': 'user_password_unique',
         'email': 'user@test.com'
     },
     'county': {
         'username': 'test_county',
-        'password': 'county_password',
+        'password': 'county_password_unique',
         'email': 'county@test.com'
     }
 }

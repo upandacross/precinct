@@ -17,7 +17,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Add the project root to the Python path to import our modules
-project_root = Path(__file__).parent.parent  # Go up one level from app_administration
+project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
 from config import Config
