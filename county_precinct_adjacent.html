@@ -1,0 +1,279 @@
+<table border="1">
+  <tr>
+    <th align="center">html_header</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">&lt;!DOCTYPE html&gt;<br />
+&lt;html lang=&quot;en&quot;&gt;<br />
+&lt;head&gt;<br />
+    &lt;meta charset=&quot;UTF-8&quot;&gt;<br />
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;<br />
+    &lt;title&gt;Patterson Precinct Adjacent Analysis - Alamance County, NC&lt;/title&gt;<br />
+    &lt;style&gt;<br />
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }<br />
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }<br />
+        h1 { color: #2c3e50; text-align: center; border-bottom: 3px solid #3498db; padding-bottom: 10px; }<br />
+        h2 { color: #34495e; margin-top: 30px; border-left: 4px solid #3498db; padding-left: 15px; }<br />
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }<br />
+        th { background-color: #3498db; color: white; padding: 12px; text-align: left; }<br />
+        td { padding: 10px; border-bottom: 1px solid #ddd; }<br />
+        tr:nth-child(even) { background-color: #f9f9f9; }<br />
+        tr:hover { background-color: #e8f4f8; }<br />
+        .target-row { background-color: #e8f5e8 !important; font-weight: bold; }<br />
+        .major-boundary { color: #e74c3c; font-weight: bold; }<br />
+        .moderate-boundary { color: #f39c12; font-weight: bold; }<br />
+        .minor-boundary { color: #95a5a6; }<br />
+        .summary { background-color: #ecf0f1; padding: 15px; border-radius: 5px; margin: 20px 0; }<br />
+        .stats { display: flex; justify-content: space-around; margin: 20px 0; }<br />
+        .stat-box { text-align: center; padding: 15px; background: #3498db; color: white; border-radius: 5px; min-width: 120px; }<br />
+    &lt;/style&gt;<br />
+&lt;/head&gt;<br />
+&lt;body&gt;<br />
+    &lt;div class=&quot;container&quot;&gt;<br />
+        &lt;h1&gt;Patterson Precinct Adjacent Analysis&lt;/h1&gt;<br />
+        &lt;div class=&quot;summary&quot;&gt;<br />
+            &lt;strong&gt;Analysis Date:&lt;/strong&gt; October 15, 2025&lt;br&gt;<br />
+            &lt;strong&gt;Target Precinct:&lt;/strong&gt; 01 PATTERSON, Alamance County, NC&lt;br&gt;<br />
+            &lt;strong&gt;Analysis Type:&lt;/strong&gt; Spatial Adjacency with Boundary Classification<br />
+        &lt;/div&gt;</td>
+  </tr>
+</table>
+<p>(1 row)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">section_header</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">&lt;h2&gt;1. Adjacent Precincts Identification&lt;/h2&gt;</td>
+  </tr>
+</table>
+<p>(1 row)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">Target Precinct</th>
+    <th align="center">Target Name</th>
+    <th align="center">County</th>
+    <th align="center">Adjacent Precinct</th>
+    <th align="center">Adjacent Name</th>
+    <th align="center">Shared Boundary (km)</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">01</td>
+    <td align="left">PATTERSON</td>
+    <td align="left">ALAMANCE</td>
+    <td align="left">02</td>
+    <td align="left">COBLE</td>
+    <td align="right">12.03</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">01</td>
+    <td align="left">PATTERSON</td>
+    <td align="left">ALAMANCE</td>
+    <td align="left">08N</td>
+    <td align="left">NORTH NEWLIN</td>
+    <td align="right">6.81</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">01</td>
+    <td align="left">PATTERSON</td>
+    <td align="left">ALAMANCE</td>
+    <td align="left">08S</td>
+    <td align="left">SOUTH NEWLIN</td>
+    <td align="right">5.06</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">01</td>
+    <td align="left">PATTERSON</td>
+    <td align="left">ALAMANCE</td>
+    <td align="left">07</td>
+    <td align="left">ALBRIGHT</td>
+    <td align="right">1.13</td>
+  </tr>
+</table>
+<p>(4 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">section_header</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">&lt;h2&gt;2. Detailed Spatial Metrics&lt;/h2&gt;</td>
+  </tr>
+</table>
+<p>(1 row)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">Relationship</th>
+    <th align="center">Precinct ID</th>
+    <th align="center">Precinct Name</th>
+    <th align="center">County</th>
+    <th align="center">Area (km²)</th>
+    <th align="center">Perimeter (km)</th>
+    <th align="center">Longitude</th>
+    <th align="center">Latitude</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">TARGET</td>
+    <td align="left">01</td>
+    <td align="left">PATTERSON</td>
+    <td align="left">ALAMANCE</td>
+    <td align="right">200.73</td>
+    <td align="right">57.22</td>
+    <td align="right">-79.487427</td>
+    <td align="right">35.903422</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">ADJACENT - COBLE (longest boundary)</td>
+    <td align="left">02</td>
+    <td align="left">COBLE</td>
+    <td align="left">ALAMANCE</td>
+    <td align="right">121.21</td>
+    <td align="right">49.49</td>
+    <td align="right">-79.486223</td>
+    <td align="right">36.000012</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">ADJACENT - ALBRIGHT</td>
+    <td align="left">07</td>
+    <td align="left">ALBRIGHT</td>
+    <td align="left">ALAMANCE</td>
+    <td align="right">85.11</td>
+    <td align="right">40.08</td>
+    <td align="right">-79.390060</td>
+    <td align="right">35.982389</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">ADJACENT - NORTH NEWLIN</td>
+    <td align="left">08N</td>
+    <td align="left">NORTH NEWLIN</td>
+    <td align="left">ALAMANCE</td>
+    <td align="right">134.70</td>
+    <td align="right">71.04</td>
+    <td align="right">-79.354084</td>
+    <td align="right">35.917387</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">ADJACENT - SOUTH NEWLIN</td>
+    <td align="left">08S</td>
+    <td align="left">SOUTH NEWLIN</td>
+    <td align="left">ALAMANCE</td>
+    <td align="right">129.01</td>
+    <td align="right">70.75</td>
+    <td align="right">-79.344678</td>
+    <td align="right">35.866832</td>
+  </tr>
+</table>
+<p>(5 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">section_header</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">&lt;h2&gt;3. Boundary Classification Analysis&lt;/h2&gt;</td>
+  </tr>
+</table>
+<p>(1 row)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">Target Precinct</th>
+    <th align="center">Target Name</th>
+    <th align="center">Adjacent Precinct</th>
+    <th align="center">Adjacent Name</th>
+    <th align="center">Shared Boundary (km)</th>
+    <th align="center">Centroid Distance (km)</th>
+    <th align="center">Boundary Type</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">01</td>
+    <td align="left">PATTERSON</td>
+    <td align="left">02</td>
+    <td align="left">COBLE</td>
+    <td align="right">12.03</td>
+    <td align="right">10.75</td>
+    <td align="left">MAJOR BOUNDARY</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">01</td>
+    <td align="left">PATTERSON</td>
+    <td align="left">08N</td>
+    <td align="left">NORTH NEWLIN</td>
+    <td align="right">6.81</td>
+    <td align="right">14.92</td>
+    <td align="left">MODERATE BOUNDARY</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">01</td>
+    <td align="left">PATTERSON</td>
+    <td align="left">08S</td>
+    <td align="left">SOUTH NEWLIN</td>
+    <td align="right">5.06</td>
+    <td align="right">16.40</td>
+    <td align="left">MODERATE BOUNDARY</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">01</td>
+    <td align="left">PATTERSON</td>
+    <td align="left">07</td>
+    <td align="left">ALBRIGHT</td>
+    <td align="right">1.13</td>
+    <td align="right">13.96</td>
+    <td align="left">MINOR BOUNDARY</td>
+  </tr>
+</table>
+<p>(4 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">html_footer</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">&lt;h2&gt;4. Summary Statistics&lt;/h2&gt;<br />
+&lt;div class=&quot;stats&quot;&gt;<br />
+    &lt;div class=&quot;stat-box&quot;&gt;<br />
+        &lt;h3&gt;Target Precinct&lt;/h3&gt;<br />
+        &lt;p&gt;01 PATTERSON&lt;br&gt;200.73 km²&lt;/p&gt;<br />
+    &lt;/div&gt;<br />
+    &lt;div class=&quot;stat-box&quot;&gt;<br />
+        &lt;h3&gt;Adjacent Precincts&lt;/h3&gt;<br />
+        &lt;p&gt;4 Total&lt;br&gt;1 Major, 2 Moderate, 1 Minor&lt;/p&gt;<br />
+    &lt;/div&gt;<br />
+    &lt;div class=&quot;stat-box&quot;&gt;<br />
+        &lt;h3&gt;Longest Boundary&lt;/h3&gt;<br />
+        &lt;p&gt;COBLE Precinct&lt;br&gt;12.03 km&lt;/p&gt;<br />
+    &lt;/div&gt;<br />
+    &lt;div class=&quot;stat-box&quot;&gt;<br />
+        &lt;h3&gt;Total Boundary&lt;/h3&gt;<br />
+        &lt;p&gt;All Adjacent&lt;br&gt;25.03 km&lt;/p&gt;<br />
+    &lt;/div&gt;<br />
+&lt;/div&gt;<br />
+<br />
+&lt;div class=&quot;summary&quot;&gt;<br />
+    &lt;h3&gt;Key Findings:&lt;/h3&gt;<br />
+    &lt;ul&gt;<br />
+        &lt;li&gt;&lt;strong&gt;PATTERSON (01)&lt;/strong&gt; is the largest precinct in this cluster at 200.73 km²&lt;/li&gt;<br />
+        &lt;li&gt;&lt;strong&gt;COBLE (02)&lt;/strong&gt; shares the longest boundary (12.03 km) - classified as MAJOR BOUNDARY&lt;/li&gt;<br />
+        &lt;li&gt;&lt;strong&gt;NORTH NEWLIN (08N)&lt;/strong&gt; and &lt;strong&gt;SOUTH NEWLIN (08S)&lt;/strong&gt; have moderate boundaries (6.81 km and 5.06 km)&lt;/li&gt;<br />
+        &lt;li&gt;&lt;strong&gt;ALBRIGHT (07)&lt;/strong&gt; has the shortest boundary connection (1.13 km) - classified as MINOR BOUNDARY&lt;/li&gt;<br />
+        &lt;li&gt;All adjacent precincts are within 16.4 km of PATTERSON's centroid&lt;/li&gt;<br />
+        &lt;li&gt;This cluster represents a typical rural precinct configuration in North Carolina&lt;/li&gt;<br />
+    &lt;/ul&gt;<br />
+&lt;/div&gt;<br />
+<br />
+&lt;div style=&quot;margin-top: 30px; padding: 15px; background-color: #2c3e50; color: white; text-align: center; border-radius: 5px;&quot;&gt;<br />
+    &lt;strong&gt;Generated:&lt;/strong&gt; October 15, 2025 | <br />
+    &lt;strong&gt;Data Source:&lt;/strong&gt; NC PostGIS Database | <br />
+    &lt;strong&gt;Analysis:&lt;/strong&gt; Spatial Adjacency with PostGIS<br />
+&lt;/div&gt;<br />
+<br />
+    &lt;/div&gt;<br />
+&lt;/body&gt;<br />
+&lt;/html&gt;</td>
+  </tr>
+</table>
+<p>(1 row)<br />
+</p>

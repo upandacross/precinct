@@ -330,6 +330,22 @@ def create_app():
     def inject_motd():
         return dict(get_motd=get_motd)
     
+    # Block suspicious user agents and rapid requests
+    @app.before_request
+    def block_suspicious_requests():
+        """Block requests from download tools and scrapers."""
+        user_agent = request.headers.get('User-Agent', '').lower()
+        
+        # Block known download tools
+        blocked_agents = [
+            'wget', 'curl', 'scrapy', 'bot', 'spider', 'crawler',
+            'downloader', 'harvester', 'extractor', 'httrack'
+        ]
+        
+        for blocked in blocked_agents:
+            if blocked in user_agent:
+                abort(403)  # Forbidden
+    
     # Session timeout handling
     @app.before_request
     def check_session_timeout():
@@ -865,6 +881,40 @@ window.addEventListener('message', function(event) {
             content = content + zoom_message_listener
         
         return content
+
+    # File protection - block direct access to sensitive files
+    @app.route('/<path:filename>')
+    def catch_all_files(filename):
+        """Catch all route to prevent direct file access."""
+        # Block sensitive file extensions
+        blocked_extensions = [
+            '.py', '.pyc', '.pyo', '.pyd',  # Python files
+            '.env', '.ini', '.cfg', '.conf',  # Config files  
+            '.log', '.sql', '.backup', '.bak', '.old', '.tmp',  # Data files
+            '.git', '.svn', '.hg',  # Version control
+            '.json', '.yml', '.yaml', '.xml'  # Data files
+        ]
+        
+        # Block sensitive directories/files
+        blocked_patterns = [
+            '__pycache__', '.venv', 'venv', 'node_modules',
+            'config', 'logs', 'backup', 'migrations',
+            'requirements.txt', 'wsgi.py', 'main.py', 'models.py'
+        ]
+        
+        # Check file extension
+        for ext in blocked_extensions:
+            if filename.lower().endswith(ext):
+                abort(404)
+        
+        # Check blocked patterns
+        for pattern in blocked_patterns:
+            if pattern in filename.lower():
+                abort(404)
+        
+        # If it's not a blocked file, let Flask handle it normally
+        # This will result in a 404 for non-existent routes
+        abort(404)
 
     # Initialize database
     with app.app_context():

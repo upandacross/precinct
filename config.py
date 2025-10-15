@@ -10,10 +10,10 @@ class Config:
     """Base configuration class."""
     
     # Basic Flask Configuration
-    SECRET_KEY = os.environ.get('SECRET_KEY', '!1OkslCZtBBPCHRG!')    # Database Configuration
+    SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(32).hex()  # Fallback to random key
 
     # Database Configuration - Only PostgreSQL NC database on hosting platform
-    SQLALCHEMY_DATABASE_URI = os.environ.get('NC_DATABASE_URL', 'postgresql://postgres:password@localhost:5432/nc')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('NC_DATABASE_URL', 'postgresql://precinct:bren123@localhost:5432/nc')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Security Configuration
