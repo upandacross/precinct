@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
@@ -489,6 +489,71 @@ def create_app():
             # Fallback to simple message if Dash is not available
             flash('Dash analytics is not available. Please install dash, plotly, and pandas packages.', 'warning')
             return redirect(url_for('index'))
+    
+    @app.route('/clustering')
+    @login_required
+    def clustering_analysis():
+        """Clustering Analysis dashboard page."""
+        from services.clustering_service import ClusteringService
+        
+        clustering_service = ClusteringService()
+        
+        # Load clustering data
+        precinct_loaded = clustering_service.load_precinct_clustering_data()
+        census_loaded = clustering_service.load_census_clustering_data()
+        
+        if not precinct_loaded:
+            flash('Precinct clustering data not available. Please run clustering analysis first.', 'warning')
+            return redirect(url_for('index'))
+        
+        # Get user-specific insights
+        user_insights = clustering_service.get_user_precinct_insights(current_user)
+        
+        # Get overall summary
+        cluster_summary = clustering_service.get_cluster_summary()
+        
+        # Get county insights if user has county
+        county_insights = None
+        if current_user.county:
+            county_insights = clustering_service.get_county_insights(current_user.county)
+        
+        return render_template('clustering.html', 
+                             user=current_user,
+                             user_insights=user_insights,
+                             cluster_summary=cluster_summary,
+                             county_insights=county_insights,
+                             census_available=census_loaded)
+
+    @app.route('/api/clustering/data')
+    @login_required
+    def clustering_data_api():
+        """API endpoint for clustering data (for charts)."""
+        from services.clustering_service import ClusteringService
+        
+        clustering_service = ClusteringService()
+        
+        if not clustering_service.load_precinct_clustering_data():
+            return jsonify({'error': 'Clustering data not available'}), 404
+        
+        # Return data for charts
+        data = clustering_service.get_chart_data()
+        if data is None:
+            return jsonify({'error': 'No clustering data available'}), 404
+            
+        return jsonify(data)
+
+    @app.route('/precinct_clustering_results.csv')
+    @login_required
+    def download_clustering_csv():
+        """Download clustering results CSV file."""
+        csv_path = os.path.join(app.root_path, 'precinct_clustering_results.csv')
+        if not os.path.exists(csv_path):
+            abort(404, description="Clustering results file not found")
+        
+        return send_file(csv_path, 
+                        as_attachment=True, 
+                        download_name='precinct_clustering_results.csv',
+                        mimetype='text/csv')
     
     @app.route('/profile')
     @login_required

@@ -83,7 +83,8 @@ def run_test_category(category, args):
         'api': 'test_api.py',
         'admin': 'test_admin.py',
         'integration': 'test_integration.py',
-        'performance': 'test_performance.py'
+        'performance': 'test_performance.py',
+        'clustering': 'test_clustering_integration.py'
     }
     
     if category not in test_files:
@@ -92,6 +93,13 @@ def run_test_category(category, args):
         return False
     
     test_file = test_files[category]
+    
+    # Special handling for clustering integration test (standalone script)
+    if category == 'clustering':
+        command = ['python', f'test/{test_file}']
+        return run_command(command, f"Running {category.upper()} tests")
+    
+    # Standard pytest command for other tests
     command = ['python', '-m', 'pytest', f'test/{test_file}', '-v']
     
     if args.coverage:
@@ -117,6 +125,7 @@ def run_all_tests(args):
         ('api', 'API Tests'),
         ('admin', 'Admin Interface Tests'),
         ('integration', 'Integration Tests'),
+        ('clustering', 'Clustering Integration Tests'),
     ]
     
     if args.include_performance:
@@ -218,7 +227,7 @@ Examples:
     
     parser.add_argument(
         '--category', 
-        choices=['auth', 'security', 'database', 'maps', 'api', 'admin', 'integration', 'performance'],
+        choices=['auth', 'security', 'database', 'maps', 'api', 'admin', 'integration', 'performance', 'clustering'],
         help='Run specific test category'
     )
     
@@ -268,8 +277,8 @@ Examples:
     print("🧪 Precinct Application Test Suite")
     print(f"Working directory: {os.getcwd()}")
     
-    # Check dependencies
-    if not check_dependencies():
+    # Check dependencies (skip for clustering-only runs)
+    if args.category != 'clustering' and not check_dependencies():
         print("❌ Missing required dependencies. Please install them first.")
         return 1
     
