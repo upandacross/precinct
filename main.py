@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify, send_file, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
@@ -498,8 +498,13 @@ def create_app():
         
         clustering_service = ClusteringService()
         
-        # Load clustering data
-        precinct_loaded = clustering_service.load_precinct_clustering_data()
+        # Determine county filter for non-admin users
+        county_filter = None
+        if not current_user.is_admin and current_user.county:
+            county_filter = current_user.county
+        
+        # Load clustering data (filtered by county for non-admin users)
+        precinct_loaded = clustering_service.load_precinct_clustering_data(county_filter=county_filter)
         census_loaded = clustering_service.load_census_clustering_data()
         
         if not precinct_loaded:
@@ -509,8 +514,12 @@ def create_app():
         # Get user-specific insights
         user_insights = clustering_service.get_user_precinct_insights(current_user)
         
-        # Get overall summary
-        cluster_summary = clustering_service.get_cluster_summary()
+        # Get cluster summary (personalized if user has precinct data)
+        user_cluster = None
+        if user_insights and 'comprehensive_cluster' in user_insights:
+            user_cluster = user_insights['comprehensive_cluster']
+        
+        cluster_summary = clustering_service.get_cluster_summary(user_cluster=user_cluster)
         
         # Get county insights if user has county
         county_insights = None
@@ -532,28 +541,83 @@ def create_app():
         
         clustering_service = ClusteringService()
         
-        if not clustering_service.load_precinct_clustering_data():
+        # Determine county filter for non-admin users
+        county_filter = None
+        if not current_user.is_admin and current_user.county:
+            county_filter = current_user.county
+        
+        if not clustering_service.load_precinct_clustering_data(county_filter=county_filter):
             return jsonify({'error': 'Clustering data not available'}), 404
         
-        # Return data for charts
+        # Return data for charts (already filtered by county during load)
         data = clustering_service.get_chart_data()
         if data is None:
-            return jsonify({'error': 'No clustering data available'}), 404
+            return jsonify({'error': 'No clustering data available for your county'}), 404
             
         return jsonify(data)
 
     @app.route('/precinct_clustering_results.csv')
     @login_required
     def download_clustering_csv():
-        """Download clustering results CSV file."""
-        csv_path = os.path.join(app.root_path, 'precinct_clustering_results.csv')
-        if not os.path.exists(csv_path):
-            abort(404, description="Clustering results file not found")
+        """Download clustering results CSV file filtered by user's county."""
+        from services.clustering_service import ClusteringService
+        import tempfile
+        from flask import after_this_request
         
-        return send_file(csv_path, 
+        clustering_service = ClusteringService()
+        
+        # Determine county filter for non-admin users
+        county_filter = None
+        if not current_user.is_admin and current_user.county:
+            county_filter = current_user.county
+        
+        if not clustering_service.load_precinct_clustering_data(county_filter=county_filter):
+            abort(404, description="Clustering data not available")
+        
+        if clustering_service.precinct_data is None or clustering_service.precinct_data.empty:
+            abort(404, description="No clustering data available for your county")
+        
+        # Create temporary CSV file with filtered data
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as temp_file:
+            clustering_service.precinct_data.to_csv(temp_file.name, index=False)
+            temp_file_path = temp_file.name
+        
+        # Determine download filename
+        download_name = f"precinct_clustering_results_{county_filter}.csv" if county_filter else "precinct_clustering_results.csv"
+        
+        # Clean up temporary file after sending
+        @after_this_request
+        def remove_file(response):
+            try:
+                os.remove(temp_file_path)
+            except Exception:
+                pass
+            return response
+        
+        return send_file(temp_file_path, 
                         as_attachment=True, 
-                        download_name='precinct_clustering_results.csv',
+                        download_name=download_name,
                         mimetype='text/csv')
+    
+    @app.route('/doc/<filename>')
+    @login_required
+    def serve_documentation(filename):
+        """Serve documentation files from the doc directory."""
+        # Security: only allow .md files
+        if not filename.endswith('.md'):
+            abort(404)
+        
+        # Security: prevent directory traversal
+        if '..' in filename or '/' in filename:
+            abort(404)
+        
+        doc_path = os.path.join(app.root_path, 'doc', filename)
+        if not os.path.exists(doc_path):
+            abort(404, description=f"Documentation file '{filename}' not found")
+        
+        return send_file(doc_path, 
+                        mimetype='text/markdown',
+                        as_attachment=False)
     
     @app.route('/profile')
     @login_required
