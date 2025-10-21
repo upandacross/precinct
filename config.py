@@ -13,7 +13,17 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(32).hex()  # Fallback to random key
 
     # Database Configuration - Only PostgreSQL NC database on hosting platform
-    SQLALCHEMY_DATABASE_URI = os.environ.get('NC_DATABASE_URL', 'postgresql://precinct:bren123@localhost:5432/nc')
+    # Build PostgreSQL URI from environment variables
+    POSTGRES_HOST = os.environ.get('POSTGRES_HOST', 'localhost')
+    POSTGRES_PORT = os.environ.get('POSTGRES_PORT', '5432')
+    POSTGRES_USER = os.environ.get('POSTGRES_USER', 'precinct')
+    POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', 'bren123')
+    POSTGRES_DB = os.environ.get('POSTGRES_DB', 'nc')
+    
+    # Construct database URI from components or use full URI if provided
+    SQLALCHEMY_DATABASE_URI = os.environ.get('NC_DATABASE_URL') or \
+        f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Security Configuration
@@ -56,8 +66,8 @@ class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = False
     
-    # Development uses NC PostgreSQL database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('NC_DATABASE_URL', 'postgresql://postgres:password@localhost:5432/nc')
+    # Development uses NC PostgreSQL database (inherits from base Config class)
+    # SQLALCHEMY_DATABASE_URI is inherited from Config class
     
     # Less secure cookies for development
     SESSION_COOKIE_SECURE = False
@@ -69,8 +79,11 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
     
-    # Production uses NC PostgreSQL database 
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or os.environ.get('NC_DATABASE_URL', 'postgresql://postgres:password@localhost:5432/nc')
+    # Production uses NC PostgreSQL database (inherits from base Config class)
+    # Override only if DATABASE_URL is explicitly set (for hosting platforms like Heroku)
+    if os.environ.get('DATABASE_URL'):
+        SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    # Otherwise inherits from base Config class with .env variables
 
     # Secure cookies for production
     SESSION_COOKIE_SECURE = True
