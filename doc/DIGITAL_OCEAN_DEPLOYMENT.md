@@ -269,7 +269,7 @@ sudo nano /var/www/precinct/.env
 # Add these variables:
 FLASK_ENV=production
 SECRET_KEY=your-super-secret-key-here
-DATABASE_URL=postgresql://precinct@localhost/nc
+DATABASE_URL=postgresql://precinct@localhost:4747/nc
 ```
 
 ### Step 8: Create Systemd Service
