@@ -29,19 +29,41 @@ class FlippableDVARebuilder:
         self.engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
         
     def cleanup_existing_temp_tables(self):
-        """Clean up any existing temporary tables."""
+        """Clean up any existing temporary tables from all sessions."""
         print("🧹 Cleaning up existing temporary tables...")
         
         temp_tables = ['temp_dem', 'temp_oppo', 'temp_dva_races', 'temp_governor_lookup']
         
         with self.engine.connect() as conn:
+            # First try to clean up regular temp tables
             for table in temp_tables:
                 try:
                     conn.execute(text(f"DROP TABLE IF EXISTS {table}"))
-                    conn.commit()
                     print(f"   ✅ Dropped {table} (if it existed)")
                 except Exception as e:
                     print(f"   ⚠️  Could not drop {table}: {e}")
+            
+            # Also clean up any temp tables in temp schemas
+            try:
+                result = conn.execute(text("""
+                    SELECT schemaname, tablename 
+                    FROM pg_tables 
+                    WHERE schemaname LIKE 'pg_temp_%' 
+                      AND tablename IN ('temp_dem', 'temp_oppo', 'temp_dva_races', 'temp_governor_lookup')
+                """))
+                
+                temp_schema_tables = result.fetchall()
+                for schema, table in temp_schema_tables:
+                    try:
+                        conn.execute(text(f"DROP TABLE IF EXISTS {schema}.{table}"))
+                        print(f"   ✅ Dropped {schema}.{table}")
+                    except Exception as e:
+                        print(f"   ⚠️  Could not drop {schema}.{table}: {e}")
+                        
+            except Exception as e:
+                print(f"   ⚠️  Could not check temp schemas: {e}")
+            
+            conn.commit()
     
     def backup_existing_flippable(self):
         """Create a backup of the existing flippable table."""
@@ -121,8 +143,9 @@ class FlippableDVARebuilder:
         """Find races that meet DVA criteria (≤100 vote gap OR ≤50% DVA)."""
         print("🎯 Finding races that meet DVA criteria...")
         print("   Criteria: Vote gap ≤ 100 OR DVA percentage ≤ 50%")
-            # Create temporary table for race analysis
-            conn.execute(text("""
+        
+        # Create temporary table for race analysis
+        conn.execute(text("""
                 CREATE TEMP TABLE temp_dva_races AS
                 WITH race_totals AS (
                     SELECT 
