@@ -13,6 +13,7 @@ from flask_limiter.util import get_remote_address
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length, Email
+from sqlalchemy import text
 from models import db, User, Map
 from datetime import datetime
 from config import get_config
@@ -54,6 +55,43 @@ class UserModelView(SecureModelView):
     
     # Define form field order - username first, then password as unique field, followed by contact and role info
     form_columns = ['username', 'email', 'password', 'phone', 'role', 'precinct', 'state', 'county', 'notes', 'is_admin', 'is_county', 'is_active']
+    
+    # Override form field types to prevent tuple issues with unique constraints
+    form_overrides = {
+        'password': StringField,
+        'notes': StringField  # Use StringField instead of TextAreaField to avoid complications
+    }
+    
+    # Custom form arguments to bypass automatic field generation issues
+    form_args = {
+        'username': {
+            'validators': [DataRequired(), Length(min=4, max=80)]
+        },
+        'email': {
+            'validators': [DataRequired(), Email(), Length(max=120)]
+        },
+        'password': {
+            'validators': [DataRequired(), Length(min=6, max=255)]
+        },
+        'phone': {
+            'validators': [Length(max=20)]
+        },
+        'role': {
+            'validators': [Length(max=100)]
+        },
+        'precinct': {
+            'validators': [Length(max=100)]
+        },
+        'state': {
+            'validators': [Length(max=50)]
+        },
+        'county': {
+            'validators': [Length(max=100)]
+        },
+        'notes': {
+            'validators': []
+        }
+    }
     
     def on_model_change(self, form, model, is_created):
         """Hash password when creating or updating user."""
@@ -488,6 +526,102 @@ def create_app():
         else:
             # Fallback to simple message if Dash is not available
             flash('Dash analytics is not available. Please install dash, plotly, and pandas packages.', 'warning')
+            return redirect(url_for('index'))
+    
+    @app.route('/flippable')
+    @login_required
+    def flippable_races():
+        """Flippable Races Analysis with Assessment Categories."""
+        try:
+            # Check if user has precinct information
+            if not current_user.county or not current_user.precinct:
+                flash('Your county and precinct information is not set. Please contact an administrator to update your profile.', 'warning')
+                return redirect(url_for('index'))
+            
+            # Get flippable races from database filtered by user's county and precinct
+            # Handle precinct format conversion (user: "012" -> flippable: "12")
+            user_precinct_converted = str(int(current_user.precinct)) if current_user.precinct.isdigit() else current_user.precinct
+            
+            query = text('''
+            SELECT county, precinct, contest_name, election_date,
+                   dem_votes, oppo_votes, gov_votes, dem_margin, dva_pct_needed
+            FROM flippable 
+            WHERE UPPER(county) = UPPER(:county) 
+            AND (precinct = :precinct OR precinct = :precinct_converted)
+            ORDER BY dem_margin DESC
+            LIMIT 100
+            ''')
+            
+            result = db.session.execute(query, {
+                'county': current_user.county,
+                'precinct': current_user.precinct,
+                'precinct_converted': user_precinct_converted
+            })
+            races = result.fetchall()
+            
+            # Process races with assessment categories
+            processed_races = []
+            assessment_counts = {"🎯 SLAM DUNK": 0, "✅ HIGHLY FLIPPABLE": 0, "🟡 COMPETITIVE": 0, "🔴 STRETCH GOAL": 0}
+            
+            for race in races:
+                # Safely extract values
+                county = race[0] if race[0] else "Unknown"
+                precinct = race[1] if race[1] else "Unknown"
+                contest_name = race[2] if race[2] else "Unknown"
+                election_date = race[3] if race[3] else "Unknown"
+                dem_votes = race[4] if race[4] is not None else 0
+                oppo_votes = race[5] if race[5] is not None else 0
+                gov_votes = race[6] if race[6] is not None else 0
+                dem_margin = race[7] if race[7] is not None else 0
+                dva_pct_needed = race[8] if race[8] is not None else 999.9
+                
+                # Calculate vote gap and DVA metrics
+                vote_gap = (oppo_votes + 1) - dem_votes
+                dem_absenteeism = gov_votes - dem_votes if gov_votes > dem_votes else 0
+                
+                # Determine assessment category
+                if vote_gap <= 25 or (dem_absenteeism > 0 and dva_pct_needed <= 15):
+                    assessment = "🎯 SLAM DUNK"
+                    effort_level = "Weekend volunteer effort"
+                elif vote_gap <= 100 or (dem_absenteeism > 0 and dva_pct_needed <= 35):
+                    assessment = "✅ HIGHLY FLIPPABLE"
+                    effort_level = "Month-long focused campaign"
+                elif vote_gap <= 300 or (dem_absenteeism > 0 and dva_pct_needed <= 60):
+                    assessment = "🟡 COMPETITIVE"
+                    effort_level = "Season-long strategic effort"
+                else:
+                    assessment = "🔴 STRETCH GOAL"
+                    effort_level = "Multi-cycle investment"
+                
+                # Determine best pathway
+                if vote_gap <= 100 and dem_absenteeism > 0 and dva_pct_needed <= 50:
+                    best_pathway = "DVA" if dva_pct_needed < (vote_gap / max(oppo_votes, 1) * 100) else "Traditional"
+                else:
+                    best_pathway = "Traditional"
+                
+                assessment_counts[assessment] += 1
+                
+                processed_races.append({
+                    'county': county,
+                    'precinct': precinct,
+                    'contest_name': contest_name,
+                    'election_date': str(election_date),
+                    'dem_votes': dem_votes,
+                    'oppo_votes': oppo_votes,
+                    'vote_gap': vote_gap,
+                    'dva_pct_needed': dva_pct_needed,
+                    'assessment': assessment,
+                    'effort_level': effort_level,
+                    'best_pathway': best_pathway
+                })
+            
+            return render_template('flippable.html', 
+                                 races=processed_races,
+                                 assessment_counts=assessment_counts,
+                                 user=current_user)
+            
+        except Exception as e:
+            flash(f'Error loading flippable races: {str(e)}', 'error')
             return redirect(url_for('index'))
     
     @app.route('/clustering')

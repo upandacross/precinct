@@ -192,23 +192,47 @@
                 <div class="row">
                     <div class="col-md-3 text-center">
                         <h4 class="text-primary">{{ cluster_summary.cluster_size }}</h4>
-                        <p class="text-muted">Precincts in Your Cluster</p>
+                        <p class="text-muted mb-1">Precincts in Your Cluster</p>
+                        <div>
+                            <span class="info-icon" 
+                                  data-bs-toggle="tooltip" 
+                                  data-bs-placement="bottom" 
+                                  title="Total number of precincts grouped with yours based on similar characteristics like size, demographics, and voting patterns.">ⓘ</span>
+                        </div>
                         <small class="text-muted">{{ cluster_summary.cluster_percentage }}% of total</small>
                     </div>
                     <div class="col-md-3 text-center">
-                        <h4 class="text-success">{{ cluster_summary.peer_precincts }}</h4>
-                        <p class="text-muted">Peer Precincts</p>
-                        <small class="text-muted">Similar to yours</small>
+                        <h4 class="text-success">{{ cluster_summary.precincts_with_political_data }}</h4>
+                        <p class="text-muted mb-1">With Political Data</p>
+                        <div>
+                            <span class="info-icon" 
+                                  data-bs-toggle="tooltip" 
+                                  data-bs-placement="bottom" 
+                                  title="Number of precincts in your cluster that have voting records and election results available for analysis.">ⓘ</span>
+                        </div>
+                        <small class="text-muted">Out of {{ cluster_summary.cluster_size }} total</small>
                     </div>
                     <div class="col-md-3 text-center">
-                        <h4 class="text-info">{{ cluster_summary.complete_data_precincts }}</h4>
-                        <p class="text-muted">Complete Data</p>
-                        <small class="text-muted">In your cluster</small>
+                        <h4 class="text-info">{{ cluster_summary.precincts_with_flippable_data }}</h4>
+                        <p class="text-muted mb-1">Flippable Races</p>
+                        <div>
+                            <span class="info-icon" 
+                                  data-bs-toggle="tooltip" 
+                                  data-bs-placement="bottom" 
+                                  title="Number of precincts in your cluster with identified competitive races that could potentially be won by Democrats with targeted effort.">ⓘ</span>
+                        </div>
+                        <small class="text-muted">Competitive opportunities</small>
                     </div>
                     <div class="col-md-3 text-center">
                         <h4 class="text-warning">{{ "%.0f"|format(cluster_summary.avg_flippability_score) }}</h4>
-                        <p class="text-muted">Avg Flippability</p>
-                        <small class="text-muted">In your cluster</small>
+                        <p class="text-muted mb-1">Avg Flippability</p>
+                        <div>
+                            <span class="info-icon" 
+                                  data-bs-toggle="tooltip" 
+                                  data-bs-placement="bottom" 
+                                  title="Average flippability score across your cluster. Higher scores indicate more winnable Republican-held seats. Zero means Democrats already control most races.">ⓘ</span>
+                        </div>
+                        <small class="text-muted">Cluster average</small>
                     </div>
                 </div>
                 

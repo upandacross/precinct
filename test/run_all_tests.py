@@ -84,7 +84,10 @@ def run_test_category(category, args):
         'admin': 'test_admin.py',
         'integration': 'test_integration.py',
         'performance': 'test_performance.py',
-        'clustering': 'test_clustering_integration.py'
+        'clustering': 'test_clustering_integration.py',
+        'dva_formula': 'test_dva_formula.py',
+        'dva_scenarios': 'test_dva_scenarios.py',
+        'dva_criteria': 'test_expanded_criteria.py'
     }
     
     if category not in test_files:
@@ -94,8 +97,8 @@ def run_test_category(category, args):
     
     test_file = test_files[category]
     
-    # Special handling for clustering integration test (standalone script)
-    if category == 'clustering':
+    # Special handling for standalone script tests
+    if category in ['clustering', 'dva_scenarios', 'dva_criteria']:
         command = ['python', f'test/{test_file}']
         return run_command(command, f"Running {category.upper()} tests")
     
@@ -126,6 +129,9 @@ def run_all_tests(args):
         ('admin', 'Admin Interface Tests'),
         ('integration', 'Integration Tests'),
         ('clustering', 'Clustering Integration Tests'),
+        ('dva_formula', 'DVA Formula Tests'),
+        ('dva_scenarios', 'DVA Scenario Tests'),
+        ('dva_criteria', 'DVA Expanded Criteria Tests'),
     ]
     
     if args.include_performance:
@@ -227,7 +233,7 @@ Examples:
     
     parser.add_argument(
         '--category', 
-        choices=['auth', 'security', 'database', 'maps', 'api', 'admin', 'integration', 'performance', 'clustering'],
+        choices=['auth', 'security', 'database', 'maps', 'api', 'admin', 'integration', 'performance', 'clustering', 'dva_formula', 'dva_scenarios', 'dva_criteria'],
         help='Run specific test category'
     )
     

@@ -151,6 +151,11 @@
                                 {% endif %}
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('flippable_races') }}">
+                                <i class="fas fa-exchange-alt"></i> Flippable Races
+                            </a>
+                        </li>
                         {% if current_user.is_admin or current_user.is_county %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('static_content') }}">

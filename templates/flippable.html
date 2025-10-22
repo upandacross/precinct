@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Flippable Races - Precinct Member's Application{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-exchange-alt"></i> Flippable Races Analysis</h1>
+        <p class="lead">Strategic analysis of winnable Democratic opportunities</p>
+        {% if current_user.county and current_user.precinct %}
+        <div class="alert alert-info">
+            <i class="fas fa-map-marker-alt"></i> 
+            Showing results for <strong>{{ current_user.precinct }}</strong>, {{ current_user.county }} County
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Assessment Categories Overview -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h3><i class="fas fa-chart-pie"></i> Assessment Categories</h3>
+        <div class="row">
+            {% for category, count in assessment_counts.items() %}
+            <div class="col-md-3 mb-3">
+                <div class="card {% if '🎯' in category %}bg-success{% elif '✅' in category %}bg-primary{% elif '🟡' in category %}bg-warning{% else %}bg-danger{% endif %} text-white">
+                    <div class="card-body text-center">
+                        <h2 class="card-title">{{ category }}</h2>
+                        <h1 class="display-4">{{ count }}</h1>
+                        <p class="card-text">
+                            {% if '🎯' in category %}
+                                Weekend volunteer effort
+                            {% elif '✅' in category %}
+                                Month-long focused campaign
+                            {% elif '🟡' in category %}
+                                Season-long strategic effort
+                            {% else %}
+                                Multi-cycle investment
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Strategy Guide -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5><i class="fas fa-lightbulb"></i> Strategy Guide</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>📈 Traditional Pathway:</strong> Focus on voter registration, door-to-door outreach, and expanding Democratic turnout
+                </div>
+                <div class="col-md-6">
+                    <strong>🏛️ DVA Pathway:</strong> Mobilize Democratic voters who voted for governor but skipped down-ballot races
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Races Table -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h3><i class="fas fa-table"></i> Race Details</h3>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" id="flippableTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Assessment</th>
+                        <th>County</th>
+                        <th>Precinct</th>
+                        <th>Contest</th>
+                        <th>Election</th>
+                        <th>Vote Gap</th>
+                        <th>DVA %</th>
+                        <th>Best Pathway</th>
+                        <th>Dem Votes</th>
+                        <th>Opp Votes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for race in races %}
+                    <tr class="{% if '🎯' in race.assessment %}table-success{% elif '✅' in race.assessment %}table-primary{% elif '🟡' in race.assessment %}table-warning{% else %}table-danger{% endif %}">
+                        <td>
+                            <span class="badge {% if '🎯' in race.assessment %}bg-success{% elif '✅' in race.assessment %}bg-primary{% elif '🟡' in race.assessment %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ race.assessment }}
+                            </span>
+                        </td>
+                        <td>{{ race.county }}</td>
+                        <td>{{ race.precinct }}</td>
+                        <td>{{ race.contest_name }}</td>
+                        <td>{{ race.election_date }}</td>
+                        <td>
+                            <strong>{{ race.vote_gap }}</strong> votes
+                        </td>
+                        <td>
+                            {% if race.dva_pct_needed < 100 %}
+                                {{ race.dva_pct_needed|round(1) }}%
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if race.best_pathway == 'DVA' %}
+                                <span class="badge bg-info">🏛️ DVA</span>
+                            {% else %}
+                                <span class="badge bg-secondary">📈 Traditional</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ "{:,}".format(race.dem_votes|int) if race.dem_votes else 0 }}</td>
+                        <td>{{ "{:,}".format(race.oppo_votes|int) if race.oppo_votes else 0 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Key Insights -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-key"></i> Key Insights</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>🎯 Priority Focus</h6>
+                        <p>Start with <strong>SLAM DUNK</strong> and <strong>HIGHLY FLIPPABLE</strong> races for quick wins and momentum building.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>📊 Resource Allocation</h6>
+                        <p>Use the <strong>Best Pathway</strong> column to determine whether traditional outreach or DVA mobilization is more effective.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>🗓️ Timeline Planning</h6>
+                        <p>Factor in the <strong>effort level</strong> when planning campaign timelines and volunteer recruitment.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable with sorting and filtering
+    $('#flippableTable').DataTable({
+        "pageLength": 25,
+        "order": [[ 0, "asc" ]], // Sort by assessment category
+        "responsive": true,
+        "columnDefs": [
+            {
+                "targets": [5, 6], // Vote Gap and DVA columns
+                "type": "num"
+            }
+        ]
+    });
+});
+</script>
+
+{% endblock %}

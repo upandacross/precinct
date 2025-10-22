@@ -1,0 +1,132 @@
+{
+  "executive_summary": {
+    "total_republican_targets": 373,
+    "high_impact_precincts": 12,
+    "dva_scenarios_tested": 4
+  },
+  "dva_efficiency": {
+    "1.0%": {
+      "races_flipped": 37,
+      "votes_needed": 8725,
+      "efficiency_ratio": 4.24
+    },
+    "1.5%": {
+      "races_flipped": 62,
+      "votes_needed": 13108,
+      "efficiency_ratio": 4.73
+    },
+    "2.0%": {
+      "races_flipped": 79,
+      "votes_needed": 17472,
+      "efficiency_ratio": 4.52
+    },
+    "3.0%": {
+      "races_flipped": 117,
+      "votes_needed": 26190,
+      "efficiency_ratio": 4.47
+    }
+  },
+  "top_precincts": {
+    "FORSYTH Precinct 132": {
+      "flippable_races": 39,
+      "avg_dva_needed": 4.22,
+      "impact_score": 83.89,
+      "total_vote_gap": 5685
+    },
+    "FORSYTH Precinct 131": {
+      "flippable_races": 35,
+      "avg_dva_needed": 4.15,
+      "impact_score": 39.56,
+      "total_vote_gap": 4187
+    },
+    "FORSYTH Precinct 16": {
+      "flippable_races": 19,
+      "avg_dva_needed": 4.65,
+      "impact_score": 26.54,
+      "total_vote_gap": 1782
+    },
+    "FORSYTH Precinct 43": {
+      "flippable_races": 36,
+      "avg_dva_needed": 4.93,
+      "impact_score": 25.87,
+      "total_vote_gap": 3719
+    },
+    "FORSYTH Precinct 71": {
+      "flippable_races": 7,
+      "avg_dva_needed": 4.08,
+      "impact_score": 22.28,
+      "total_vote_gap": 878
+    },
+    "FORSYTH Precinct 809": {
+      "flippable_races": 6,
+      "avg_dva_needed": 2.08,
+      "impact_score": 21.84,
+      "total_vote_gap": 503
+    },
+    "FORSYTH Precinct 77": {
+      "flippable_races": 23,
+      "avg_dva_needed": 4.01,
+      "impact_score": 17.66,
+      "total_vote_gap": 1929
+    },
+    "FORSYTH Precinct 805": {
+      "flippable_races": 3,
+      "avg_dva_needed": 2.82,
+      "impact_score": 16.67,
+      "total_vote_gap": 158
+    },
+    "FORSYTH Precinct 55": {
+      "flippable_races": 9,
+      "avg_dva_needed": 3.62,
+      "impact_score": 15.66,
+      "total_vote_gap": 969
+    },
+    "FORSYTH Precinct 135": {
+      "flippable_races": 18,
+      "avg_dva_needed": 5.3,
+      "impact_score": 14.86,
+      "total_vote_gap": 2340
+    }
+  },
+  "strategic_recommendations": [
+    {
+      "priority": "Immediate",
+      "action": "Focus on Tier 1 races (\u22640.5% margin)",
+      "races_count": 20,
+      "estimated_dva_needed": "0.5-1.0%"
+    },
+    {
+      "priority": "High",
+      "action": "Target top 5 impact precincts",
+      "precincts": [
+        [
+          "FORSYTH",
+          "132"
+        ],
+        [
+          "FORSYTH",
+          "131"
+        ],
+        [
+          "FORSYTH",
+          "16"
+        ],
+        [
+          "FORSYTH",
+          "43"
+        ],
+        [
+          "FORSYTH",
+          "71"
+        ]
+      ],
+      "estimated_dva_needed": "4.4%"
+    },
+    {
+      "priority": "Medium",
+      "action": "Expand to Tier 2-3 races with 1.5-2.0% DVA",
+      "races_count": 60,
+      "estimated_dva_needed": "1.5-2.0%"
+    }
+  ]
+}
