@@ -261,6 +261,8 @@ class TestDatabasePerformance:
                     username=f'perf_user_{i}',
                     email=f'perf_{i}@test.com',
                     password=f'test_password_{i}',  # Unique password per user
+                    phone=f'555-{i:04d}',
+                    role='voter',
                     state='NC',
                     county='Wake',
                     precinct=f'{i:03d}'

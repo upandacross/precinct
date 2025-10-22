@@ -21,23 +21,23 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
-    phone = db.Column(db.String(20), nullable=True)
-    role = db.Column(db.String(100), nullable=True)
+    phone = db.Column(db.String(20), nullable=False)
+    role = db.Column(db.String(100), nullable=False)
     precinct = db.Column(db.String(100), nullable=True)
     state = db.Column(db.String(50), nullable=True)
     county = db.Column(db.String(100), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     
-    def __init__(self, username, email, password, is_admin=False, is_county=False, is_active=True, phone=None, role=None, precinct=None, state=None, county=None, notes=None):
+    def __init__(self, username, email, password, phone, role, is_admin=False, is_county=False, is_active=True, precinct=None, state=None, county=None, notes=None):
         self.username = username
         self.email = email
         self.password = password
         self.set_password(password)
+        self.phone = phone
+        self.role = role
         self.is_admin = is_admin
         self.is_county = is_county
         self.is_active = is_active
-        self.phone = phone
-        self.role = role
         self.precinct = precinct
         self.state = state
         self.county = county

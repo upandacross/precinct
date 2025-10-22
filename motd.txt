@@ -1,1 +1,1 @@
-Integration test MOTD
+Test message 9

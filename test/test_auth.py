@@ -214,6 +214,8 @@ class TestPasswordSecurity:
                 username='hash_test',
                 email='hash@test.com',
                 password='test_password',
+                phone='555-HASH',
+                role='voter',
                 state='NC',
                 county='Wake',
                 precinct='001'

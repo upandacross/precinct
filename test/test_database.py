@@ -53,6 +53,8 @@ class TestUserModel:
                 username='password_test',
                 email='password@test.com',
                 password='my_secure_password',
+                phone='555-PWD',
+                role='voter',
                 state='NC',
                 county='Wake',
                 precinct='001'
@@ -107,6 +109,8 @@ class TestUserModel:
                 username=regular_user.username,  # Same username
                 email='different@test.com',
                 password='test_password',
+                phone='555-DUP',
+                role='voter',
                 state='NC',
                 county='Wake',
                 precinct='002'
@@ -139,6 +143,8 @@ class TestUserModel:
                 username='login_test',
                 email='login@test.com',
                 password='test_password',
+                phone='555-LOGIN',
+                role='voter',
                 state='NC',
                 county='Wake',
                 precinct='001'
@@ -244,6 +250,8 @@ class TestMapModel:
                 username='no_map_user',
                 email='nomap@test.com',
                 password='test_password',
+                phone='555-NOMAP',
+                role='voter',
                 state='CA',  # Different state
                 county='Los Angeles',
                 precinct='999'
@@ -299,6 +307,8 @@ class TestDatabaseOperations:
                     username=f'bulk_user_{i}',
                     email=f'bulk_{i}@test.com',
                     password=f'password_{i}',
+                    phone=f'555-{i:04d}',
+                    role='voter',
                     state='NC',
                     county='Wake',
                     precinct=f'00{i}'
@@ -337,6 +347,8 @@ class TestDatabaseOperations:
                 username='to_delete',
                 email='delete@test.com',
                 password='test_password',
+                phone='555-DEL',
+                role='voter',
                 state='NC',
                 county='Wake',
                 precinct='999'
@@ -402,6 +414,8 @@ class TestDataValidation:
                 username='email_test',
                 email='invalid_email_format',
                 password='test_password',
+                phone='555-EMAIL',
+                role='voter',
                 state='NC',
                 county='Wake',
                 precinct='001'
@@ -425,6 +439,8 @@ class TestDataValidation:
                 username='precinct_test',
                 email='precinct@test.com',
                 password='test_password',
+                phone='555-PREC',
+                role='voter',
                 state='NC',
                 county='Wake',
                 precinct='012'  # Should handle leading zeros

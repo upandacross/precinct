@@ -137,7 +137,16 @@ def add_security_headers(response):
     """
     Add security headers to response.
     """
+    from flask import current_app
+    
     for header, value in SECURITY_HEADERS.items():
+        # Skip HSTS in development mode (when DEBUG=True) but allow it in testing
+        # for security tests, unless explicitly disabled
+        if header == 'Strict-Transport-Security':
+            skip_hsts = (current_app.config.get('DEBUG', False) and 
+                        not current_app.config.get('TESTING', False))
+            if skip_hsts:
+                continue  # Skip HSTS in development mode only
         response.headers[header] = value
     return response
 

@@ -27,6 +27,8 @@ def test_flask_admin_user_creation():
                         username='test_admin',
                         email='admin@test.com',
                         password='adminpass123',
+                        phone='555-ADMIN',
+                        role='Administrator',
                         is_admin=True
                     )
                     db.session.add(admin_user)

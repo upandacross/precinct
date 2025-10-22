@@ -11,7 +11,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField
 from wtforms.validators import DataRequired, Length, Email
 from sqlalchemy import text
 from models import db, User, Map
@@ -38,6 +38,21 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Sign In')
 
+class CustomUserForm(FlaskForm):
+    """Custom form for User creation with proper validation."""
+    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=80)])
+    email = StringField('Email', validators=[DataRequired(), Length(max=120)])
+    password = StringField('Password', validators=[DataRequired(), Length(min=6, max=255)])
+    phone = StringField('Phone', validators=[DataRequired(), Length(max=20)])
+    role = StringField('Role', validators=[DataRequired(), Length(max=100)])
+    precinct = StringField('Precinct', validators=[Length(max=100)])
+    state = StringField('State', validators=[Length(max=50)])
+    county = StringField('County', validators=[Length(max=100)])
+    notes = TextAreaField('Notes')
+    is_admin = BooleanField('Is Admin')
+    is_county = BooleanField('Is County')
+    is_active = BooleanField('Is Active', default=True)
+
 class SecureModelView(ModelView):
     """Secure model view that requires admin login."""
     def is_accessible(self):
@@ -53,45 +68,8 @@ class UserModelView(SecureModelView):
     form_excluded_columns = ['password_hash', 'created_at', 'last_login']
     column_details_list = ['id', 'username', 'email', 'password', 'phone', 'role', 'precinct', 'state', 'county', 'notes', 'is_admin', 'is_county', 'is_active', 'created_at', 'last_login']
     
-    # Define form field order - username first, then password as unique field, followed by contact and role info
-    form_columns = ['username', 'email', 'password', 'phone', 'role', 'precinct', 'state', 'county', 'notes', 'is_admin', 'is_county', 'is_active']
-    
-    # Override form field types to prevent tuple issues with unique constraints
-    form_overrides = {
-        'password': StringField,
-        'notes': StringField  # Use StringField instead of TextAreaField to avoid complications
-    }
-    
-    # Custom form arguments to bypass automatic field generation issues
-    form_args = {
-        'username': {
-            'validators': [DataRequired(), Length(min=4, max=80)]
-        },
-        'email': {
-            'validators': [DataRequired(), Email(), Length(max=120)]
-        },
-        'password': {
-            'validators': [DataRequired(), Length(min=6, max=255)]
-        },
-        'phone': {
-            'validators': [Length(max=20)]
-        },
-        'role': {
-            'validators': [Length(max=100)]
-        },
-        'precinct': {
-            'validators': [Length(max=100)]
-        },
-        'state': {
-            'validators': [Length(max=50)]
-        },
-        'county': {
-            'validators': [Length(max=100)]
-        },
-        'notes': {
-            'validators': []
-        }
-    }
+    # Use custom form to bypass automatic field generation issues
+    form = CustomUserForm
     
     def on_model_change(self, form, model, is_created):
         """Hash password when creating or updating user."""
@@ -1067,6 +1045,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 username=current_app.config['DEFAULT_ADMIN_USERNAME'],
                 email=current_app.config['DEFAULT_ADMIN_EMAIL'],
                 password=current_app.config['DEFAULT_ADMIN_PASSWORD'],
+                phone='555-ADMIN',  # Required field
+                role='Administrator',  # Required field
                 is_admin=True
             )
             db.session.add(admin_user)

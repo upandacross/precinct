@@ -301,6 +301,8 @@ class TestMapErrorHandling:
                 username='incomplete_location',
                 email='incomplete@test.com',
                 password='test_password',
+                phone='555-INCOMP',
+                role='voter',
                 state='',  # Missing state
                 county='',  # Missing county
                 precinct=''  # Missing precinct
