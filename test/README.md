@@ -20,19 +20,51 @@ test/
 ├── test_integration.py                 # End-to-end integration tests
 ├── test_performance.py                 # Load testing and performance validation
 ├── test_clustering_integration.py      # Clustering analysis integration tests
+├── test_custom_form_*.py               # Flask-Admin custom form tests
+├── test_flask_admin_user.py            # Flask-Admin user creation tests
 └── run_all_tests.py                    # Test runner script
 ```
 
 ## Prerequisites
 
-Before running tests, ensure you have the required dependencies:
+### Dependencies Management
+
+**IMPORTANT**: This project uses `uv` for dependency management. 
+
+#### Installing Test Dependencies
 
 ```bash
-# Install test dependencies
-pip install pytest pytest-flask pytest-cov requests-mock selenium webdriver-manager
+# Install all dependencies (including test dependencies)
+uv sync
+
+# Add a new test dependency
+uv add --group test package_name
+
+# Add a new regular dependency
+uv add package_name
 ```
 
+**DO NOT use `pip install`** - always use `uv add` to ensure proper dependency tracking and virtual environment management.
+
+#### Current Test Dependencies
+- `pytest`: Core testing framework
+- `pytest-flask`: Flask-specific testing utilities
+- `pytest-cov`: Coverage reporting
+- `beautifulsoup4`: HTML parsing for form analysis
+- `requests-mock`: HTTP request mocking
+- `selenium`: Browser automation (if needed)
+
 ## Running Tests
+
+### Full Test Suite (Recommended)
+
+```bash
+# Run all tests with verbose output
+python -m pytest test/ -v
+
+# Run all tests with coverage
+python -m pytest test/ --cov=. --cov-report=html
+```
 
 ### Individual Test Categories
 
@@ -40,10 +72,10 @@ pip install pytest pytest-flask pytest-cov requests-mock selenium webdriver-mana
 # Authentication tests
 python -m pytest test/test_auth.py -v
 
-# Security tests
+# Security tests (includes HSTS and security headers)
 python -m pytest test/test_security.py -v
 
-# Database tests
+# Database tests (includes User model with required phone/role)
 python -m pytest test/test_database.py -v
 
 # Map functionality tests

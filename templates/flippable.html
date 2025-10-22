@@ -5,8 +5,17 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <h1><i class="fas fa-exchange-alt"></i> Flippable Races Analysis</h1>
-        <p class="lead">Strategic analysis of winnable Democratic opportunities</p>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="fas fa-exchange-alt"></i> Flippable Races Analysis</h1>
+                <p class="lead">Strategic analysis of winnable Democratic opportunities</p>
+            </div>
+            <div>
+                <button type="button" class="btn fw-bold" data-bs-toggle="modal" data-bs-target="#explanationModal" style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;">
+                    <i class="fas fa-question-circle"></i> Explanation
+                </button>
+            </div>
+        </div>
         {% if current_user.county and current_user.precinct %}
         <div class="alert alert-info">
             <i class="fas fa-map-marker-alt"></i> 
@@ -99,10 +108,12 @@
                             <strong>{{ race.vote_gap }}</strong> votes
                         </td>
                         <td>
-                            {% if race.dva_pct_needed < 100 %}
-                                {{ race.dva_pct_needed|round(1) }}%
+                            {% if race.dva_pct_needed is none or race.dva_pct_needed < 0 or race.dva_pct_needed >= 999 %}
+                                <span class="text-dark">N/A</span>
+                            {% elif race.dva_pct_needed >= 100 %}
+                                <span class="text-warning">{{ race.dva_pct_needed|round(1) }}%</span>
                             {% else %}
-                                N/A
+                                <span class="text-success">{{ race.dva_pct_needed|round(1) }}%</span>
                             {% endif %}
                         </td>
                         <td>
@@ -144,6 +155,64 @@
                         <p>Factor in the <strong>effort level</strong> when planning campaign timelines and volunteer recruitment.</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Explanation Modal -->
+<div class="modal fade" id="explanationModal" tabindex="-1" aria-labelledby="explanationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="text-shadow: none;">
+                <h5 class="modal-title text-dark" id="explanationModalLabel" style="text-shadow: none;">
+                    <i class="fas fa-info-circle"></i> Flippable Races Analysis Explanation
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-dark" style="text-shadow: none;">
+                <div class="row">
+                    <div class="col-12" style="text-shadow: none;">
+                        <h6 style="text-shadow: none;"><i class="fas fa-bullseye"></i> What are Flippable Races?</h6>
+                        <p style="text-shadow: none;">Flippable races are competitive elections where Republicans currently win, but could potentially be won by Democrats through strategic voter mobilization.</p>
+                        
+                        <h6 style="text-shadow: none;"><i class="fas fa-chart-line"></i> Key Terms</h6>
+                        <ul style="text-shadow: none;">
+                            <li style="text-shadow: none;"><strong>Vote Gap:</strong> The number of additional votes Democrats need to win (Republican votes + 1 - Democratic votes)</li>
+                            <li style="text-shadow: none;"><strong>DVA (Democratic Vote Absences):</strong> The percentage of absent Democratic voters needed to flip the race</li>
+                            <li style="text-shadow: none;"><strong>DVA Strategy:</strong> Mobilizing Democrats who voted for governor but skipped down-ballot races</li>
+                            <li style="text-shadow: none;"><strong>Traditional Strategy:</strong> Voter registration, turnout drives, and general mobilization</li>
+                        </ul>
+                        
+                        <h6 style="text-shadow: none;"><i class="fas fa-calculator"></i> How DVA is Calculated</h6>
+                        <p style="text-shadow: none;"><code style="text-shadow: none;">DVA % = (Votes Needed to Win) ÷ (Available Democratic Voters) × 100</code></p>
+                        <p style="text-shadow: none;">Where:</p>
+                        <ul style="text-shadow: none;">
+                            <li style="text-shadow: none;"><strong>Votes Needed to Win:</strong> (Republican votes + 1) - Democratic votes</li>
+                            <li style="text-shadow: none;"><strong>Available Democratic Voters:</strong> Governor votes - Race votes (Democrats who voted governor but skipped this race)</li>
+                        </ul>
+                        
+                        <h6 style="text-shadow: none;"><i class="fas fa-question"></i> Why Does DVA Show 'N/A'?</h6>
+                        <p style="text-shadow: none;">DVA shows 'N/A' when there are no available Democratic voters to mobilize (when governor votes ≤ race votes). This means every Democrat who voted for governor also voted in this race, so the DVA strategy doesn't apply. However, <strong>traditional voter mobilization strategies may still work</strong>.</p>
+                        
+                        <h6 style="text-shadow: none;"><i class="fas fa-trophy"></i> Assessment Categories</h6>
+                        <ul style="text-shadow: none;">
+                            <li style="text-shadow: none;"><strong>🎯 Slam Dunk:</strong> ≤25 vote gap or ≤15% DVA - achievable with weekend effort</li>
+                            <li style="text-shadow: none;"><strong>✅ Highly Flippable:</strong> ≤100 vote gap or ≤35% DVA - month-long focused campaign</li>
+                            <li style="text-shadow: none;"><strong>🟡 Competitive:</strong> Larger gaps but ≤50% DVA - sustained campaign effort</li>
+                            <li style="text-shadow: none;"><strong>🔴 Stretch Goal:</strong> Very difficult but theoretically possible</li>
+                        </ul>
+                        
+                        <h6 style="text-shadow: none;"><i class="fas fa-route"></i> Best Pathway</h6>
+                        <ul style="text-shadow: none;">
+                            <li style="text-shadow: none;"><strong>🏛️ DVA:</strong> Focus on mobilizing absent Democratic voters</li>
+                            <li style="text-shadow: none;"><strong>📈 Traditional:</strong> Focus on voter registration and general turnout</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
