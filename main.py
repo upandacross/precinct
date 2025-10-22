@@ -295,11 +295,14 @@ def create_app():
                     return create_error_page("Access Error", 
                         "Your state/county information is not set. Please contact an administrator.")
                 
+                # Zero-pad the precinct number to 3 digits for database lookup
+                padded_precinct = precinct.zfill(3)
+                
                 # Find map using state, county, and precinct as composite key
                 map_record = Map.query.filter_by(
                     state=current_user.state,
                     county=current_user.county,
-                    precinct=precinct
+                    precinct=padded_precinct
                 ).first()
                 
                 if map_record and map_record.map:
@@ -336,13 +339,23 @@ def create_app():
         if user.is_county and user.state and user.county:
             return True
         
+        # Zero-pad the user's precinct for comparison
+        user_precinct_padded = user.precinct.zfill(3) if user.precinct else None
+        
         # For regular users, only allow access to their assigned precinct map
-        if user.precinct == filename_or_precinct:
+        if user.precinct == filename_or_precinct or user_precinct_padded == filename_or_precinct:
             return True
         
-        # Check if filename corresponds to user's precinct
-        if filename_or_precinct and filename_or_precinct.replace('.html', '') == user.precinct:
-            return True
+        # Check if filename corresponds to user's precinct (handle both padded and unpadded)
+        if filename_or_precinct:
+            # Remove .html extension if present
+            precinct_from_filename = filename_or_precinct.replace('.html', '')
+            
+            # Check both padded and unpadded versions
+            if (precinct_from_filename == user.precinct or 
+                precinct_from_filename == user_precinct_padded or
+                precinct_from_filename.zfill(3) == user_precinct_padded):
+                return True
         
         return False
 
@@ -1066,14 +1079,15 @@ document.addEventListener('DOMContentLoaded', function() {
         map_content = get_map_content_for_user(current_user)
         if map_content is None:
             flash(f'No map found for {current_user.state} {current_user.county} Precinct {current_user.precinct}.', 'info')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('index'))
         elif 'Database Error' in map_content and '<div class="error-container">' in map_content:
             # Database error occurred, show error message
             flash('There was an error retrieving your map from the database. Please try again or contact support.', 'error')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('index'))
         
-        # Create a filename for display purposes
-        filename = f"{current_user.precinct}.html"
+        # Create a zero-padded filename for display purposes
+        padded_precinct = current_user.precinct.zfill(3)
+        filename = f"{padded_precinct}.html"
         return render_template('static_viewer.html', 
                              filename=filename,
                              display_name=f"{current_user.state} {current_user.county} Precinct {current_user.precinct}",

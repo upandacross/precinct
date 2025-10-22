@@ -101,19 +101,25 @@ class Map(db.Model):
         if not user.state or not user.county or not user.precinct:
             return None
         
+        # Zero-pad the precinct number to 3 digits for database lookup
+        padded_precinct = user.precinct.zfill(3)
+        
         return Map.query.filter_by(
             state=user.state,
             county=user.county,
-            precinct=user.precinct
+            precinct=padded_precinct
         ).first()
     
     @staticmethod
     def get_map_by_location(state, county, precinct):
         """Get the map for a specific location."""
+        # Zero-pad the precinct number to 3 digits for database lookup
+        padded_precinct = precinct.zfill(3)
+        
         return Map.query.filter_by(
             state=state,
             county=county,
-            precinct=precinct
+            precinct=padded_precinct
         ).first()
     
     @staticmethod

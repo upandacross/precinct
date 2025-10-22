@@ -67,7 +67,7 @@
                         
                         {% if user.precinct and not user.is_admin %}
                             <div class="btn-group" role="group">
-                                <a href="{{ url_for('view_user_map', filename=user.precinct + '.html') }}" class="btn btn-outline-success">
+                                <a href="{{ url_for('view_my_map') }}" class="btn btn-outline-success">
                                     <i class="fas fa-map"></i> View My Map (Precinct {{ user.precinct }})
                                 </a>
                                 <a href="{{ url_for('view_file_new_tab', filename=user.precinct + '.html') }}" target="_blank" class="btn btn-outline-success">

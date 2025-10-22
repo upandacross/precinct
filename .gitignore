@@ -8,7 +8,10 @@ wheels/
 *.py[oc]
 uv.lock
 *.tar
+*.tz
+*.zip
 *.txt
+*voter_reg*
 .env
 
 # Virtual environments
