@@ -37,91 +37,30 @@ def get_analytics_data(flask_app, user_id=None):
                 except:
                     current_authenticated_user = None
             
-            # Determine filter scope based on user permissions
+            # Determine scope description based on user permissions
             if current_authenticated_user and hasattr(current_authenticated_user, 'is_admin') and hasattr(current_authenticated_user, 'is_county'):
                 if current_authenticated_user.is_admin or current_authenticated_user.is_county:
-                    # Admin and county users: filter by state and county
-                    base_query = User.query.filter_by(state=current_authenticated_user.state, county=current_authenticated_user.county)
-                    scope_description = f"{current_authenticated_user.county} County"
+                    # Admin and county users: show county scope
+                    scope_description = f"{current_authenticated_user.county} County Analytics"
                 else:
-                    # Regular users: filter by state, county, and precinct
-                    base_query = User.query.filter_by(
-                        state=current_authenticated_user.state, 
-                        county=current_authenticated_user.county, 
-                        precinct=current_authenticated_user.precinct
-                    )
-                    scope_description = f"{current_authenticated_user.county} County, Precinct {current_authenticated_user.precinct}"
+                    # Regular users: show precinct scope
+                    scope_description = f"{current_authenticated_user.county} County, Precinct {current_authenticated_user.precinct} Analytics"
             else:
                 # No user context - return error instead of fallback data
                 raise Exception("No authenticated user context available. Please log in to view analytics.")
-            
-            # Get filtered user statistics
-            total_users = base_query.count()
-            admin_users = base_query.filter_by(is_admin=True).count()
-            county_users = base_query.filter_by(is_county=True, is_admin=False).count()  # County users who are not admin
-            regular_users = total_users - admin_users - county_users
-            active_users = base_query.filter_by(is_active=True).count()
-            inactive_users = total_users - active_users
+                
     except Exception as e:
         # Capture specific error details
         error_message = str(e)
         if "No authenticated user context" in error_message:
             database_error = f"Authentication Error: {error_message}"
-            # Don't show any data when there's no user context
-            total_users = 0
-            admin_users = 0
-            regular_users = 0
-            active_users = 0
-            inactive_users = 0
-            county_users = 0
             scope_description = "No User Context"
         else:
             database_error = f"Database Error: {error_message}"
-            # Fallback to sample data for other database errors
-            total_users = 25
-            admin_users = 3
-            regular_users = 22
-            active_users = 23
-            inactive_users = 2
-            county_users = 0
             scope_description = "Error - Sample Data"
-    
-    # Determine user permissions for UI display
-    is_admin = False
-    is_county = False
-    try:
-        # Use Flask app context for database queries
-        with flask_app.app_context():
-            # Get current user from session or parameter
-            current_authenticated_user = None
-            
-            if user_id:
-                # Get user by ID if provided
-                current_authenticated_user = User.query.get(user_id)
-            
-            # Check permissions
-            if current_authenticated_user and hasattr(current_authenticated_user, 'is_admin') and hasattr(current_authenticated_user, 'is_county'):
-                is_admin = current_authenticated_user.is_admin
-                is_county = current_authenticated_user.is_county
-    except Exception as e:
-        # If there's an error getting user permissions, default to False
-        is_admin = False
-        is_county = False
 
     # Sample data for charts (in a real app, this would come from actual analytics)
     analytics_data = {
-        'user_stats': {
-            'total': total_users,
-            'admins': admin_users,
-            'county': county_users,
-            'regular': regular_users,
-            'active': active_users,
-            'inactive': inactive_users
-        },
-        'user_permissions': {
-            'is_admin': is_admin,
-            'is_county': is_county
-        },
         'scope_description': scope_description,
         'monthly_signups': {
             'Month': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -270,81 +209,8 @@ def create_dash_app(flask_app):
             ], className="alert alert-warning alert-dismissible", role="alert")
         ], className="mb-4") if data['database_error'] else html.Div(),
         
-        # Key Statistics
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.H2("0", id="total-users-stat", className="stats-number text-white"),
-                    html.P([html.I(className="fas fa-users"), " Total Users"], className="stats-label text-white")
-                ], className="text-center p-3", style={
-                    'background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    'border-radius': '10px'
-                })
-            ], className="col-md-2"),
-            
-            html.Div([
-                html.Div([
-                    html.H2("0", id="active-users-stat", className="stats-number text-white"),
-                    html.P([html.I(className="fas fa-user-check"), " Active Users"], className="stats-label text-white")
-                ], className="text-center p-3", style={
-                    'background': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                    'border-radius': '10px'
-                })
-            ], className="col-md-2"),
-            
-            html.Div([
-                html.Div([
-                    html.H2("0", id="admin-users-stat", className="stats-number text-white"),
-                    html.P([html.I(className="fas fa-user-shield"), " Admins"], className="stats-label text-white")
-                ], className="text-center p-3", style={
-                    'background': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                    'border-radius': '10px'
-                })
-            ], id="admin-card", className="col-md-2", style={'display': 'none'}),
-            
-            html.Div([
-                html.Div([
-                    html.H2("0", id="county-users-stat", className="stats-number text-white"),
-                    html.P([html.I(className="fas fa-user-tie"), " County"], className="stats-label text-white")
-                ], className="text-center p-3", style={
-                    'background': 'linear-gradient(135deg, #fd746c 0%, #ff9068 100%)',
-                    'border-radius': '10px'
-                })
-            ], id="county-card", className="col-md-2", style={'display': 'none'}),
-            
-            html.Div([
-                html.Div([
-                    html.H2("0", id="regular-users-stat", className="stats-number text-white"),
-                    html.P([html.I(className="fas fa-user"), " Regular"], className="stats-label text-white")
-                ], className="text-center p-3", style={
-                    'background': 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                    'border-radius': '10px'
-                })
-            ], className="col-md-2"),
-            
-            html.Div([
-                html.Div([
-                    html.H2("0", id="inactive-users-stat", className="stats-number text-white"),
-                    html.P([html.I(className="fas fa-user-times"), " Inactive"], className="stats-label text-white")
-                ], className="text-center p-3", style={
-                    'background': 'linear-gradient(135deg, #a8a8a8 0%, #7b7b7b 100%)',
-                    'border-radius': '10px'
-                })
-            ], className="col-md-2"),
-        ], className="row mb-4"),
-        
         # Charts Row 1
         html.Div([
-            html.Div([
-                html.Div([
-                    dcc.Graph(id='user-distribution-chart', figure=user_dist_fig, style={'height': '400px'})
-                ], className="chart-card p-3", style={
-                    'background': 'white',
-                    'border-radius': '10px',
-                    'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'
-                })
-            ], className="col-md-6"),
-            
             html.Div([
                 html.Div([
                     dcc.Graph(id='password-strength-chart', figure=password_fig, style={'height': '400px'})
@@ -353,7 +219,7 @@ def create_dash_app(flask_app):
                     'border-radius': '10px',
                     'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'
                 })
-            ], className="col-md-6"),
+            ], className="col-md-12"),
         ], className="row mb-4"),
         
         # Charts Row 2
@@ -460,98 +326,6 @@ def create_dash_app(flask_app):
         if stored_data:
             return f"Analytics for: {stored_data['scope_description']}"
         return "Analytics for: Loading..."
-    
-    # Callback to update user distribution chart
-    @dash_app.callback(
-        Output('user-distribution-chart', 'figure'),
-        Input('analytics-data-store', 'data')
-    )
-    def update_user_distribution_chart(stored_data):
-        if stored_data and stored_data.get('user_stats'):
-            stats = stored_data['user_stats']
-            try:
-                fig = px.pie(
-                    values=[stats['regular'], stats['admins'], stats['county'], stats['inactive']],
-                    names=['Regular Users', 'Admin Users', 'County Users', 'Inactive Users'],
-                    title='Website User Types',
-                    color_discrete_sequence=['#36A2EB', '#FF6384', '#4BC0C0', '#FFCE56']
-                )
-                fig.update_layout(
-                    font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
-                    title_font_size=18,
-                    margin=dict(t=50, b=50, l=50, r=50)
-                )
-                return fig
-            except Exception as e:
-                error_fig = go.Figure()
-                error_fig.add_annotation(
-                    text=f"Chart Error: {str(e)}",
-                    xref="paper", yref="paper",
-                    x=0.5, y=0.5, showarrow=False,
-                    font=dict(size=16, color="red")
-                )
-                error_fig.update_layout(title="Website User Types - Error")
-                return error_fig
-        
-        # Return placeholder figure
-        loading_fig = go.Figure()
-        loading_fig.add_annotation(
-            text="Loading user data...",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=16, color="#666")
-        )
-        loading_fig.update_layout(title="Website User Types")
-        return loading_fig
-    
-    # Callback to update stats cards
-    @dash_app.callback(
-        [
-            Output('total-users-stat', 'children'),
-            Output('active-users-stat', 'children'),
-            Output('admin-users-stat', 'children'),
-            Output('county-users-stat', 'children'),
-            Output('regular-users-stat', 'children'),
-            Output('inactive-users-stat', 'children')
-        ],
-        Input('analytics-data-store', 'data')
-    )
-    def update_stats_cards(stored_data):
-        if stored_data and stored_data.get('user_stats'):
-            stats = stored_data['user_stats']
-            return (
-                str(stats.get('total', 0)),
-                str(stats.get('active', 0)),
-                str(stats.get('admins', 0)),
-                str(stats.get('county', 0)),
-                str(stats.get('regular', 0)),
-                str(stats.get('inactive', 0))
-            )
-        # Return zeros if no data
-        return ("0", "0", "0", "0", "0", "0")
-    
-    # Callback to show/hide admin and county cards based on permissions
-    @dash_app.callback(
-        [
-            Output('admin-card', 'style'),
-            Output('county-card', 'style')
-        ],
-        Input('analytics-data-store', 'data')
-    )
-    def update_card_visibility(stored_data):
-        # Default styles (hidden)
-        admin_style = {'display': 'none'}
-        county_style = {'display': 'none'}
-        
-        if stored_data and stored_data.get('user_permissions'):
-            permissions = stored_data['user_permissions']
-            
-            # Show admin card if user is admin or county
-            if permissions.get('is_admin') or permissions.get('is_county'):
-                admin_style = {'display': 'block'}
-                county_style = {'display': 'block'}
-        
-        return admin_style, county_style
     
     # Callback to update password strength chart (political affiliation)
     @dash_app.callback(
