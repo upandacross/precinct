@@ -307,6 +307,13 @@ WHERE (precinct = :precinct OR precinct = :unpadded_precinct)
 - **Role-Based Access**: Regular users retain "Flippable Races", admin/county users get "Flippable Analysis" - no duplication
 - **Precinct-Focused Design**: Analysis page emphasizes actionable precinct summary data over county breakdowns
 
+**Analytics UI Cleanup (October 23, 2025):**
+- **County Analytics Page**: Removed all user metrics (cards and pie chart) to focus on non-user analytics
+- **Dash Analytics Page**: Eliminated user statistics cards and user distribution chart for cleaner interface
+- **Website User Report**: Updated terminology from "Unorganized" to "No Users" for clearer messaging
+- **Data Separation**: User-specific analytics properly isolated to dedicated admin/county-only reports
+- **Focused Analytics**: Both analytics pages now emphasize operational metrics over user demographics
+
 ### Files Modified for "View My Map" Fix
 
 **Core Application Files:**

@@ -1119,6 +1119,25 @@ def create_app():
             thirty_days_ago = datetime.utcnow() - timedelta(days=30)
             recent_users = base_query.filter(User.created_at >= thirty_days_ago).count()
             
+            # Get monthly signup data for chart (last 12 months)
+            monthly_signups = []
+            monthly_labels = []
+            for i in range(11, -1, -1):  # Last 12 months, newest first
+                month_start = datetime.utcnow().replace(day=1) - timedelta(days=32*i)
+                month_start = month_start.replace(day=1)
+                if i == 0:
+                    month_end = datetime.utcnow()
+                else:
+                    month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+                
+                month_users = base_query.filter(
+                    User.created_at >= month_start,
+                    User.created_at <= month_end
+                ).count()
+                
+                monthly_signups.append(month_users)
+                monthly_labels.append(month_start.strftime('%b %Y'))
+            
             # Get all precincts in county and user distribution
             precinct_distribution = {}
             if current_user.county:
@@ -1175,7 +1194,11 @@ def create_app():
                 'inactive': inactive_users,
                 'recent': recent_users,
                 'scope_description': scope_description,
-                'precinct_distribution': dict(sorted(precinct_distribution.items()))
+                'precinct_distribution': dict(sorted(precinct_distribution.items())),
+                'monthly_signups': {
+                    'labels': monthly_labels,
+                    'data': monthly_signups
+                }
             }
             
             return render_template('website_user_report.html', 

@@ -62,10 +62,6 @@ def get_analytics_data(flask_app, user_id=None):
     # Sample data for charts (in a real app, this would come from actual analytics)
     analytics_data = {
         'scope_description': scope_description,
-        'monthly_signups': {
-            'Month': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            'Signups': [12, 19, 8, 15, 22, 13]
-        },
         'login_activity': {
             'Day': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             'Logins': [65, 59, 80, 81, 56, 55, 40]
@@ -98,10 +94,8 @@ def create_dash_app(flask_app):
     
     # Initially create with empty data - will be populated by callback
     data = {
-        'user_stats': {'total': 0, 'admins': 0, 'county': 0, 'regular': 0, 'active': 0, 'inactive': 0},
         'scope_description': 'Loading...',
         'database_error': None,
-        'monthly_signups': {'Month': [], 'Signups': []},
         'login_activity': {'Day': [], 'Logins': []},
         'password_strength': {'Strength': [], 'Count': []},
         'recent_activity': {'Week': [], 'Logins': [], 'Registrations': []}
@@ -132,16 +126,6 @@ def create_dash_app(flask_app):
         font=dict(size=16, color="#666")
     )
     password_fig.update_layout(title="Party Voting Distribution")
-    
-    # Monthly Signups Line Chart - placeholder
-    monthly_fig = go.Figure()
-    monthly_fig.add_annotation(
-        text="Loading registration data...",
-        xref="paper", yref="paper",
-        x=0.5, y=0.5, showarrow=False,
-        font=dict(size=16, color="#666")
-    )
-    monthly_fig.update_layout(title="Monthly Voter Registrations")
     
     # Login Activity Bar Chart - placeholder
     login_fig = go.Figure()
@@ -214,19 +198,6 @@ def create_dash_app(flask_app):
             html.Div([
                 html.Div([
                     dcc.Graph(id='password-strength-chart', figure=password_fig, style={'height': '400px'})
-                ], className="chart-card p-3", style={
-                    'background': 'white',
-                    'border-radius': '10px',
-                    'box-shadow': '0 2px 10px rgba(0,0,0,0.1)'
-                })
-            ], className="col-md-12"),
-        ], className="row mb-4"),
-        
-        # Charts Row 2
-        html.Div([
-            html.Div([
-                html.Div([
-                    dcc.Graph(id='monthly-signups-chart', figure=monthly_fig, style={'height': '400px'})
                 ], className="chart-card p-3", style={
                     'background': 'white',
                     'border-radius': '10px',
@@ -370,51 +341,6 @@ def create_dash_app(flask_app):
             font=dict(size=16, color="#666")
         )
         loading_fig.update_layout(title="Political Affiliation Distribution")
-        return loading_fig
-    
-    # Callback to update monthly signups chart
-    @dash_app.callback(
-        Output('monthly-signups-chart', 'figure'),
-        Input('analytics-data-store', 'data')
-    )
-    def update_monthly_signups_chart(stored_data):
-        if stored_data and stored_data.get('monthly_signups'):
-            data = stored_data['monthly_signups']
-            try:
-                fig = px.line(
-                    x=data['Month'],
-                    y=data['Signups'],
-                    title='Monthly User Signups',
-                    markers=True
-                )
-                fig.update_traces(line_color='#36A2EB', marker_size=8)
-                fig.update_layout(
-                    font=dict(family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"),
-                    title_font_size=18,
-                    xaxis_title="Month",
-                    yaxis_title="New Signups",
-                    margin=dict(t=50, b=50, l=50, r=50)
-                )
-                return fig
-            except Exception as e:
-                error_fig = go.Figure()
-                error_fig.add_annotation(
-                    text=f"Chart Error: {str(e)}",
-                    xref="paper", yref="paper",
-                    x=0.5, y=0.5, showarrow=False,
-                    font=dict(size=16, color="red")
-                )
-                return error_fig
-        
-        # Return loading figure
-        loading_fig = go.Figure()
-        loading_fig.add_annotation(
-            text="Loading signup data...",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=16, color="#666")
-        )
-        loading_fig.update_layout(title="Monthly User Signups")
         return loading_fig
     
     # Callback to update login activity chart

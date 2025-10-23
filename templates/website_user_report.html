@@ -95,6 +95,20 @@
     </div>
 </div>
 
+<!-- Monthly Signups Chart -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Monthly User Signups</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlySignupsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Precinct Organization Overview -->
 {% if user_stats.precinct_distribution %}
 <div class="row mt-4">
@@ -260,6 +274,45 @@ const userStatusChart = new Chart(userStatusCtx, {
         plugins: {
             legend: {
                 position: 'bottom'
+            }
+        }
+    }
+});
+
+// Monthly Signups Line Chart
+const monthlySignupsCtx = document.getElementById('monthlySignupsChart').getContext('2d');
+const monthlySignupsChart = new Chart(monthlySignupsCtx, {
+    type: 'line',
+    data: {
+        labels: {{ user_stats.monthly_signups.labels | safe }},
+        datasets: [{
+            label: 'New User Registrations',
+            data: {{ user_stats.monthly_signups.data }},
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
             }
         }
     }
