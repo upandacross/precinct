@@ -18,6 +18,7 @@ from models import db, User, Map
 from datetime import datetime
 from config import get_config
 from security import add_security_headers
+from precinct_utils import normalize_precinct_id, normalize_precinct_join, create_precinct_lookup
 try:
     from dash_analytics import create_dash_app
     DASH_AVAILABLE = True
@@ -295,15 +296,27 @@ def create_app():
                     return create_error_page("Access Error", 
                         "Your state/county information is not set. Please contact an administrator.")
                 
-                # Zero-pad the precinct number to 3 digits for database lookup
-                padded_precinct = precinct.zfill(3)
+                # Normalize precinct number for flexible database lookup
+                padded_precinct, unpadded_precinct = normalize_precinct_id(precinct)
+                if not padded_precinct:
+                    app.logger.error(f'Invalid precinct format in filename: {filename}')
+                    return create_error_page("Invalid Request", 
+                        f"Invalid precinct format in filename: {filename}")
                 
-                # Find map using state, county, and precinct as composite key
+                # Try finding map with both padded and unpadded precinct formats
                 map_record = Map.query.filter_by(
                     state=current_user.state,
                     county=current_user.county,
                     precinct=padded_precinct
                 ).first()
+                
+                # If not found with padded format, try unpadded
+                if not map_record:
+                    map_record = Map.query.filter_by(
+                        state=current_user.state,
+                        county=current_user.county,
+                        precinct=unpadded_precinct
+                    ).first()
                 
                 if map_record and map_record.map:
                     # If it's stored HTML content, return it
@@ -530,23 +543,23 @@ def create_app():
                 return redirect(url_for('index'))
             
             # Get flippable races from database filtered by user's county and precinct
-            # Handle precinct format conversion (user: "012" -> flippable: "12")
-            user_precinct_converted = str(int(current_user.precinct)) if current_user.precinct.isdigit() else current_user.precinct
+            # Normalize precinct format to handle inconsistencies between tables
+            padded_precinct, unpadded_precinct = normalize_precinct_id(current_user.precinct)
             
             query = text('''
             SELECT county, precinct, contest_name, election_date,
                    dem_votes, oppo_votes, gov_votes, dem_margin, dva_pct_needed
             FROM flippable 
             WHERE UPPER(county) = UPPER(:county) 
-            AND (precinct = :precinct OR precinct = :precinct_converted)
+            AND (precinct = :precinct_padded OR precinct = :precinct_unpadded)
             ORDER BY dem_margin DESC
             LIMIT 100
             ''')
             
             result = db.session.execute(query, {
                 'county': current_user.county,
-                'precinct': current_user.precinct,
-                'precinct_converted': user_precinct_converted
+                'precinct_padded': padded_precinct,
+                'precinct_unpadded': unpadded_precinct
             })
             races = result.fetchall()
             

@@ -3,6 +3,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
+from precinct_utils import normalize_precinct_id
 
 db = SQLAlchemy()
 
@@ -63,6 +64,46 @@ class User(UserMixin, db.Model):
         """Return False since this is not an anonymous user."""
         return False
     
+    def get_normalized_precinct(self):
+        """Get normalized precinct IDs (padded, unpadded) for flexible database queries.
+        
+        Returns:
+            tuple: (padded_precinct, unpadded_precinct) or (None, None) if no precinct set
+        """
+        if not self.precinct:
+            return None, None
+        return normalize_precinct_id(self.precinct)
+    
+    def get_precinct_display_name(self):
+        """Get a user-friendly display name for the precinct.
+        
+        Returns:
+            str: Formatted precinct display name or 'Not Set'
+        """
+        if not self.precinct or not self.county or not self.state:
+            return 'Not Set'
+        return f"{self.state} {self.county} Precinct {self.precinct}"
+    
+    def matches_precinct(self, precinct_value):
+        """Check if a precinct value matches this user's precinct in any format.
+        
+        Args:
+            precinct_value: Precinct ID to check against (any format)
+            
+        Returns:
+            bool: True if the precinct matches this user's precinct
+        """
+        if not self.precinct or not precinct_value:
+            return False
+            
+        user_padded, user_unpadded = self.get_normalized_precinct()
+        test_padded, test_unpadded = normalize_precinct_id(precinct_value)
+        
+        if not user_padded or not test_padded:
+            return False
+            
+        return user_padded == test_padded or user_unpadded == test_unpadded
+    
 
     
     def __repr__(self):
@@ -97,30 +138,62 @@ class Map(db.Model):
     
     @staticmethod
     def get_map_for_user(user):
-        """Get the map for a specific user based on their state, county, and precinct."""
+        """Get the map for a specific user based on their state, county, and precinct.
+        
+        Uses normalized precinct matching to handle zero-padding inconsistencies.
+        """
         if not user.state or not user.county or not user.precinct:
             return None
         
-        # Zero-pad the precinct number to 3 digits for database lookup
-        padded_precinct = user.precinct.zfill(3)
+        # Get normalized precinct formats
+        padded_precinct, unpadded_precinct = user.get_normalized_precinct()
+        if not padded_precinct:
+            return None
         
-        return Map.query.filter_by(
+        # Try padded format first
+        map_record = Map.query.filter_by(
             state=user.state,
             county=user.county,
             precinct=padded_precinct
         ).first()
+        
+        # If not found, try unpadded format
+        if not map_record:
+            map_record = Map.query.filter_by(
+                state=user.state,
+                county=user.county,
+                precinct=unpadded_precinct
+            ).first()
+        
+        return map_record
     
     @staticmethod
     def get_map_by_location(state, county, precinct):
-        """Get the map for a specific location."""
-        # Zero-pad the precinct number to 3 digits for database lookup
-        padded_precinct = precinct.zfill(3)
+        """Get the map for a specific location.
         
-        return Map.query.filter_by(
+        Uses normalized precinct matching to handle zero-padding inconsistencies.
+        """
+        # Get normalized precinct formats
+        padded_precinct, unpadded_precinct = normalize_precinct_id(precinct)
+        if not padded_precinct:
+            return None
+        
+        # Try padded format first
+        map_record = Map.query.filter_by(
             state=state,
             county=county,
             precinct=padded_precinct
         ).first()
+        
+        # If not found, try unpadded format
+        if not map_record:
+            map_record = Map.query.filter_by(
+                state=state,
+                county=county,
+                precinct=unpadded_precinct
+            ).first()
+        
+        return map_record
     
     @staticmethod
     def get_maps_for_county(county_name):

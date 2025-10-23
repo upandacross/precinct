@@ -11,6 +11,7 @@ import os
 import pandas as pd
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
+from precinct_utils import normalize_precinct_id, normalize_precinct_join
 
 def generate_dva_summary():
     """Generate a comprehensive text summary of DVA analysis."""

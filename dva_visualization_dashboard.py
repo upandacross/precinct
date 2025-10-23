@@ -23,6 +23,7 @@ import argparse
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 from datetime import datetime
+from precinct_utils import normalize_precinct_id, normalize_precinct_join
 
 class DVAVisualizationDashboard:
     """Creates comprehensive DVA analysis visualizations."""

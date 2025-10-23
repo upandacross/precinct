@@ -32,8 +32,20 @@ from flask import Flask
 from models import db
 from dotenv import load_dotenv
 from sqlalchemy import text
+from precinct_utils import normalize_precinct_id, normalize_precinct_join
 import warnings
 warnings.filterwarnings('ignore')
+
+def normalize_precinct_for_join(precinct_str):
+    """Handle precinct zero-padding for joins."""
+    if pd.isna(precinct_str):
+        return None
+    precinct = str(precinct_str).strip()
+    if not precinct:
+        return None
+    # Remove leading zeros, but keep at least one digit
+    return precinct.lstrip('0') or '0'
+
 
 # Set up plotting style
 plt.style.use('seaborn-v0_8')
@@ -164,26 +176,50 @@ class PrecinctClusteringAnalysis:
         return self.political_features
     
     def prepare_flippability_features(self):
-        """Prepare flippability features for clustering."""
+        """Prepare flippability features for clustering with normalized precinct handling."""
         print("\n🎯 Preparing flippability clustering features...")
         
-        # Aggregate flippability data by precinct
-        flippable_agg = self.flippable_data.groupby(['county', 'precinct']).agg({
+        # Add normalized precinct columns to flippable data
+        flippable_normalized = self.flippable_data.copy()
+        precinct_norm = flippable_normalized['precinct'].apply(normalize_precinct_id)
+        flippable_normalized[['precinct_padded', 'precinct_unpadded']] = pd.DataFrame(
+            precinct_norm.tolist(), index=flippable_normalized.index
+        )
+        
+        # Use unpadded precinct for consistent grouping (matches most voting data)
+        flippable_for_agg = flippable_normalized.dropna(subset=['precinct_unpadded']).copy()
+        
+        # Aggregate flippability data by normalized precinct
+        flippable_agg = flippable_for_agg.groupby(['county', 'precinct_unpadded']).agg({
             'dem_votes': 'sum',
             'oppo_votes': 'sum', 
             'dem_margin': 'mean',
             'dva_pct_needed': 'mean'
         }).reset_index()
         
+        # Rename back to precinct for consistency
+        flippable_agg = flippable_agg.rename(columns={'precinct_unpadded': 'precinct'})
+        
         # Calculate additional flippability metrics
         flippable_agg['total_votes'] = flippable_agg['dem_votes'] + flippable_agg['oppo_votes']
-        flippable_agg['dem_vote_pct'] = (flippable_agg['dem_votes'] / flippable_agg['total_votes']) * 100
+        
+        # Handle division by zero for dem_vote_pct
+        mask = flippable_agg['total_votes'] > 0
+        flippable_agg['dem_vote_pct'] = 0.0
+        flippable_agg.loc[mask, 'dem_vote_pct'] = (
+            flippable_agg.loc[mask, 'dem_votes'] / flippable_agg.loc[mask, 'total_votes']
+        ) * 100
+        
         flippable_agg['competitiveness'] = 100 - abs(flippable_agg['dem_vote_pct'] - 50)  # How close to 50/50
         flippable_agg['flippability_score'] = (flippable_agg['competitiveness'] * flippable_agg['total_votes']) / 1000  # Weighted by turnout
         
         self.flippability_features = flippable_agg.fillna(0)
         
         print(f"✅ Flippability features prepared for {len(self.flippability_features)} precincts")
+        print(f"   - Original flippable records: {len(self.flippable_data)}")
+        print(f"   - Precincts with valid data: {len(flippable_for_agg)}")
+        print(f"   - Aggregated to: {len(flippable_agg)} unique county/precinct combinations")
+        
         return self.flippability_features
     
     def perform_spatial_clustering(self, n_clusters=5):
@@ -372,11 +408,21 @@ class PrecinctClusteringAnalysis:
         political = self.prepare_political_features()
         flippable = self.prepare_flippability_features()
         
-        # Merge on precinct and county using LEFT JOIN to keep all spatial precincts
-        comprehensive = spatial.merge(
-            political, on=['county', 'precinct'], how='left'
-        ).merge(
-            flippable, on=['county', 'precinct'], how='left'
+        # Use normalize_precinct_join for robust precinct matching
+        print("\n🔗 Merging datasets with normalized precinct matching...")
+        
+        # First merge spatial with political data
+        comprehensive = normalize_precinct_join(
+            spatial, political, 
+            county_col='county', precinct_col='precinct', 
+            how='left', suffixes=('', '_political')
+        )
+        
+        # Then merge with flippable data
+        comprehensive = normalize_precinct_join(
+            comprehensive, flippable,
+            county_col='county', precinct_col='precinct',
+            how='left', suffixes=('', '_flippable')
         )
         
         # Fill missing values for precincts without political/flippable data
