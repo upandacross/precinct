@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Flippable Races Analysis - Precinct Member's Application{% endblock %}
+
+{% block content %}
+<!-- Overall Assessment Summary -->
+<div class="container-fluid px-3 mb-4">
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie"></i> County Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 col-md-3 mb-2">
+                            <div class="bg-success text-white rounded p-3">
+                                <h3 class="mb-1">{{ total_assessment_counts['🎯 SLAM DUNK'] }}</h3>
+                                <strong>🎯 SLAM DUNK RACES</strong><br>
+                                <small>Weekend volunteer effort</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <div class="bg-info text-white rounded p-3">
+                                <h3 class="mb-1">{{ total_assessment_counts['✅ HIGHLY FLIPPABLE'] }}</h3>
+                                <strong>✅ HIGHLY FLIPPABLE</strong><br>
+                                <small>Month-long focused campaign</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <div class="bg-warning text-white rounded p-3">
+                                <h3 class="mb-1">{{ total_assessment_counts['🟡 COMPETITIVE'] }}</h3>
+                                <strong>🟡 COMPETITIVE RACES</strong><br>
+                                <small>Season-long strategic effort</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <div class="bg-danger text-white rounded p-3">
+                                <h3 class="mb-1">{{ total_assessment_counts['🔴 STRETCH GOAL'] }}</h3>
+                                <strong>🔴 STRETCH GOALS</strong><br>
+                                <small>Multi-cycle investment</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Precinct Summary Table -->
+<div class="container-fluid px-3 mb-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-table"></i> Precinct Summary Analysis
+                    </h4>
+                    <small class="text-muted">Assessment totals by precinct - Click any row to view detailed flippable races for that precinct</small>
+                </div>
+                <div class="card-body p-0">
+                    {% if precinct_summaries %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>County</th>
+                                        <th>Precinct</th>
+                                        <th class="text-center">🎯 Slam Dunk</th>
+                                        <th class="text-center">✅ Highly Flippable</th>
+                                        <th class="text-center">🟡 Competitive</th>
+                                        <th class="text-center">🔴 Stretch Goal</th>
+                                        <th class="text-center">Total Races</th>
+                                        <th class="text-center">Total Vote Gap</th>
+                                        <th class="text-center">Avg DVA %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for precinct_key, precinct in precinct_summaries %}
+                                        <tr class="clickable-row" 
+                                            data-county="{{ precinct.county }}" 
+                                            data-precinct="{{ precinct.precinct }}"
+                                            style="cursor: pointer;"
+                                            title="Click to view detailed analysis for {{ precinct.county }} County, Precinct {{ precinct.precinct }}">
+                                            <td><strong>{{ precinct.county }}</strong></td>
+                                            <td><strong>{{ precinct.precinct }}</strong></td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success">{{ precinct['🎯 SLAM DUNK'] }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info">{{ precinct['✅ HIGHLY FLIPPABLE'] }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning">{{ precinct['🟡 COMPETITIVE'] }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-danger">{{ precinct['🔴 STRETCH GOAL'] }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <strong>{{ precinct.total_races }}</strong>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge {% if precinct.total_vote_gap <= 100 %}bg-success{% elif precinct.total_vote_gap <= 500 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                    {{ precinct.total_vote_gap }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if precinct.avg_dva != 'N/A' %}
+                                                    <span class="badge {% if precinct.avg_dva <= 25 %}bg-success{% elif precinct.avg_dva <= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                        {{ precinct.avg_dva }}%
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ precinct.avg_dva }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center p-4">
+                            <i class="fas fa-info-circle text-muted fa-3x mb-3"></i>
+                            <p class="text-muted">No flippable races data available for your scope.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Back to Dashboard Button -->
+<div class="container-fluid px-3 mb-4">
+    <div class="row">
+        <div class="col-12 text-center">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers to table rows
+    const clickableRows = document.querySelectorAll('.clickable-row');
+    
+    clickableRows.forEach(row => {
+        row.addEventListener('click', function() {
+            const county = this.dataset.county;
+            const precinct = this.dataset.precinct;
+            
+            // Create a form to submit the county and precinct data to the flippable page
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for("flippable_races") }}';
+            
+            const countyInput = document.createElement('input');
+            countyInput.type = 'hidden';
+            countyInput.name = 'analysis_county';
+            countyInput.value = county;
+            
+            const precinctInput = document.createElement('input');
+            precinctInput.type = 'hidden';
+            precinctInput.name = 'analysis_precinct';
+            precinctInput.value = precinct;
+            
+            form.appendChild(countyInput);
+            form.appendChild(precinctInput);
+            document.body.appendChild(form);
+            form.submit();
+        });
+        
+        // Add hover effect
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#e8f4f8';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+});
+</script>
+
+{% endblock %}

@@ -775,19 +775,36 @@ def create_app():
             flash('Dash analytics is not available. Please install dash, plotly, and pandas packages.', 'warning')
             return redirect(url_for('index'))
     
-    @app.route('/flippable')
+    @app.route('/flippable', methods=['GET', 'POST'])
     @login_required
     def flippable_races():
         """Flippable Races Analysis with Assessment Categories."""
         try:
-            # Check if user has precinct information
-            if not current_user.county or not current_user.precinct:
-                flash('Your county and precinct information is not set. Please contact an administrator to update your profile.', 'warning')
-                return redirect(url_for('index'))
+            # Handle analysis navigation for admin/county users
+            analysis_county = None
+            analysis_precinct = None
+            from_analysis = False
             
-            # Get flippable races from database filtered by user's county and precinct
+            if request.method == 'POST' and (current_user.is_admin or current_user.is_county):
+                analysis_county = request.form.get('analysis_county')
+                analysis_precinct = request.form.get('analysis_precinct')
+                from_analysis = True
+            
+            # Determine which county and precinct to show
+            if from_analysis:
+                target_county = analysis_county
+                target_precinct = analysis_precinct
+            else:
+                # Check if user has precinct information
+                if not current_user.county or not current_user.precinct:
+                    flash('Your county and precinct information is not set. Please contact an administrator to update your profile.', 'warning')
+                    return redirect(url_for('index'))
+                target_county = current_user.county
+                target_precinct = current_user.precinct
+            
+            # Get flippable races from database filtered by target county and precinct
             # Normalize precinct format to handle inconsistencies between tables
-            padded_precinct, unpadded_precinct = normalize_precinct_id(current_user.precinct)
+            padded_precinct, unpadded_precinct = normalize_precinct_id(target_precinct)
             
             query = text('''
             SELECT county, precinct, contest_name, election_date,
@@ -800,7 +817,7 @@ def create_app():
             ''')
             
             result = db.session.execute(query, {
-                'county': current_user.county,
+                'county': target_county,
                 'precinct_padded': padded_precinct,
                 'precinct_unpadded': unpadded_precinct
             })
@@ -865,10 +882,166 @@ def create_app():
             return render_template('flippable.html', 
                                  races=processed_races,
                                  assessment_counts=assessment_counts,
+                                 show_back_to_analysis=from_analysis,
+                                 target_county=target_county,
+                                 target_precinct=target_precinct,
                                  user=current_user)
             
         except Exception as e:
             flash(f'Error loading flippable races: {str(e)}', 'error')
+            return redirect(url_for('index'))
+
+    @app.route('/flippable-analysis')
+    @login_required
+    def flippable_analysis():
+        """Administrative Flippable Races Analysis - County-wide overview for admin and county users."""
+        # Restrict access to admin and county users only
+        if not (current_user.is_admin or current_user.is_county):
+            flash('Access denied. This page is available to administrators and county coordinators only.', 'error')
+            return redirect(url_for('index'))
+        
+        try:
+            # Determine scope based on user role
+            if current_user.is_admin:
+                # Admin sees all counties
+                county_filter = None
+                scope_description = "Statewide Analysis - All Counties"
+            else:
+                # County users see only their county
+                county_filter = current_user.county
+                scope_description = f"{current_user.county} County Analysis"
+            
+            # Build the base query
+            base_query = '''
+            SELECT county, precinct, contest_name, election_date,
+                   dem_votes, oppo_votes, gov_votes, dem_margin, dva_pct_needed,
+                   COUNT(*) as race_count
+            FROM flippable 
+            '''
+            
+            if county_filter:
+                base_query += 'WHERE UPPER(county) = UPPER(:county) '
+            
+            # Get summary statistics by county and precinct
+            summary_query = base_query + '''
+            GROUP BY county, precinct, contest_name, election_date, dem_votes, oppo_votes, gov_votes, dem_margin, dva_pct_needed
+            ORDER BY county, precinct, dem_margin DESC
+            '''
+            
+            # Execute query
+            if county_filter:
+                result = db.session.execute(text(summary_query), {'county': county_filter})
+            else:
+                result = db.session.execute(text(summary_query))
+            
+            races = result.fetchall()
+            
+            # Process races and create summaries
+            county_summaries = {}
+            precinct_summaries = {}  # New: Group by county-precinct combination
+            total_assessment_counts = {"🎯 SLAM DUNK": 0, "✅ HIGHLY FLIPPABLE": 0, "🟡 COMPETITIVE": 0, "🔴 STRETCH GOAL": 0}
+            
+            for race in races:
+                county = race[0] if race[0] else "Unknown"
+                precinct = race[1] if race[1] else "Unknown"
+                contest_name = race[2] if race[2] else "Unknown"
+                election_date = race[3] if race[3] else "Unknown"
+                dem_votes = race[4] if race[4] is not None else 0
+                oppo_votes = race[5] if race[5] is not None else 0
+                gov_votes = race[6] if race[6] is not None else 0
+                dem_margin = race[7] if race[7] is not None else 0
+                dva_pct_needed = race[8] if race[8] is not None else 999.9
+                
+                # Calculate metrics
+                vote_gap = (oppo_votes + 1) - dem_votes
+                dem_absenteeism = gov_votes - dem_votes if gov_votes > dem_votes else 0
+                
+                # Determine assessment category
+                if vote_gap <= 25 or (dem_absenteeism > 0 and dva_pct_needed <= 15):
+                    assessment = "🎯 SLAM DUNK"
+                elif vote_gap <= 100 or (dem_absenteeism > 0 and dva_pct_needed <= 35):
+                    assessment = "✅ HIGHLY FLIPPABLE"
+                elif vote_gap <= 300 or (dem_absenteeism > 0 and dva_pct_needed <= 60):
+                    assessment = "🟡 COMPETITIVE"
+                else:
+                    assessment = "🔴 STRETCH GOAL"
+                
+                total_assessment_counts[assessment] += 1
+                
+                # Initialize county summary if needed
+                if county not in county_summaries:
+                    county_summaries[county] = {
+                        "🎯 SLAM DUNK": 0, "✅ HIGHLY FLIPPABLE": 0, "🟡 COMPETITIVE": 0, "🔴 STRETCH GOAL": 0,
+                        'total_races': 0, 'total_vote_gap': 0, 'avg_dva': 0, 'dva_count': 0
+                    }
+                
+                county_summaries[county][assessment] += 1
+                county_summaries[county]['total_races'] += 1
+                county_summaries[county]['total_vote_gap'] += vote_gap
+                if dva_pct_needed < 999:
+                    county_summaries[county]['avg_dva'] += dva_pct_needed
+                    county_summaries[county]['dva_count'] += 1
+                
+                # Group by precinct - key is county-precinct combination
+                precinct_key = f"{county}-{precinct}"
+                if precinct_key not in precinct_summaries:
+                    precinct_summaries[precinct_key] = {
+                        'county': county,
+                        'precinct': precinct,
+                        "🎯 SLAM DUNK": 0, "✅ HIGHLY FLIPPABLE": 0, "🟡 COMPETITIVE": 0, "🔴 STRETCH GOAL": 0,
+                        'total_races': 0, 'total_vote_gap': 0, 'avg_dva': 0, 'dva_count': 0,
+                        'races': []  # Store individual races for detail view
+                    }
+                
+                precinct_summaries[precinct_key][assessment] += 1
+                precinct_summaries[precinct_key]['total_races'] += 1
+                precinct_summaries[precinct_key]['total_vote_gap'] += vote_gap
+                if dva_pct_needed < 999:
+                    precinct_summaries[precinct_key]['avg_dva'] += dva_pct_needed
+                    precinct_summaries[precinct_key]['dva_count'] += 1
+                
+                # Add individual race details
+                precinct_summaries[precinct_key]['races'].append({
+                    'contest_name': contest_name,
+                    'election_date': str(election_date),
+                    'dem_votes': dem_votes,
+                    'oppo_votes': oppo_votes,
+                    'vote_gap': vote_gap,
+                    'dva_pct_needed': round(dva_pct_needed, 1) if dva_pct_needed < 999 else 'N/A',
+                    'assessment': assessment,
+                    'dem_margin': dem_margin
+                })
+            
+            # Calculate averages for county summaries
+            for county in county_summaries:
+                if county_summaries[county]['dva_count'] > 0:
+                    county_summaries[county]['avg_dva'] = round(
+                        county_summaries[county]['avg_dva'] / county_summaries[county]['dva_count'], 1
+                    )
+                else:
+                    county_summaries[county]['avg_dva'] = 'N/A'
+            
+            # Calculate averages for precinct summaries
+            for precinct_key in precinct_summaries:
+                if precinct_summaries[precinct_key]['dva_count'] > 0:
+                    precinct_summaries[precinct_key]['avg_dva'] = round(
+                        precinct_summaries[precinct_key]['avg_dva'] / precinct_summaries[precinct_key]['dva_count'], 1
+                    )
+                else:
+                    precinct_summaries[precinct_key]['avg_dva'] = 'N/A'
+            
+            # Sort precincts by county then precinct number
+            sorted_precincts = sorted(precinct_summaries.items(), key=lambda x: (x[1]['county'], x[1]['precinct']))
+            
+            return render_template('flippable_analysis.html', 
+                                 county_summaries=county_summaries,
+                                 precinct_summaries=sorted_precincts,
+                                 total_assessment_counts=total_assessment_counts,
+                                 scope_description=scope_description,
+                                 user=current_user)
+                                 
+        except Exception as e:
+            flash(f'Error loading flippable races analysis: {str(e)}', 'error')
             return redirect(url_for('index'))
     
     @app.route('/clustering')
