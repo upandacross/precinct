@@ -190,6 +190,10 @@ class ClusteringService:
     def _calculate_race_win_percentage(self, user):
         """Calculate the percentage of races won by Democrats in this precinct."""
         try:
+            # Handle both padded and unpadded precinct formats
+            user_precinct = str(user.precinct).strip()
+            unpadded_precinct = user_precinct.lstrip('0') or '0'
+            
             result = db.session.execute(text("""
                 WITH race_totals AS (
                     SELECT 
@@ -197,7 +201,8 @@ class ClusteringService:
                         SUM(CASE WHEN choice_party = 'DEM' THEN total_votes ELSE 0 END) as dem_votes,
                         SUM(CASE WHEN choice_party = 'REP' THEN total_votes ELSE 0 END) as rep_votes
                     FROM candidate_vote_results 
-                    WHERE precinct = :precinct AND county = :county 
+                    WHERE (precinct = :precinct OR precinct = :unpadded_precinct) 
+                      AND county = :county 
                       AND choice_party IN ('DEM', 'REP')
                     GROUP BY contest_name, election_date
                     HAVING SUM(CASE WHEN choice_party = 'DEM' THEN total_votes ELSE 0 END) > 0 
@@ -207,7 +212,11 @@ class ClusteringService:
                     COUNT(*) as total_races,
                     SUM(CASE WHEN dem_votes > rep_votes THEN 1 ELSE 0 END) as dem_wins
                 FROM race_totals
-            """), {'precinct': str(user.precinct), 'county': str(user.county).upper()}).fetchone()
+            """), {
+                'precinct': user_precinct, 
+                'unpadded_precinct': unpadded_precinct,
+                'county': str(user.county).upper()
+            }).fetchone()
             
             if result and result[0] and result[0] > 0:
                 total_races = result[0]
