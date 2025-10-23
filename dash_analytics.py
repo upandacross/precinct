@@ -352,11 +352,33 @@ def create_dash_app(flask_app):
         if stored_data and stored_data.get('login_activity'):
             data = stored_data['login_activity']
             try:
+                # Validate and clean data
+                days = data.get('Day', [])
+                logins = data.get('Logins', [])
+                
+                if not days or not logins:
+                    raise ValueError("Missing required data arrays")
+                
+                # Clean and validate numeric data
+                clean_days = []
+                clean_logins = []
+                
+                for i in range(min(len(days), len(logins))):
+                    # Validate login values
+                    login_val = logins[i]
+                    if isinstance(login_val, (int, float)) and not (isinstance(login_val, float) and (login_val != login_val)):  # Check for NaN
+                        clean_login = float(login_val)
+                    else:
+                        clean_login = 0.0
+                    
+                    clean_days.append(str(days[i]))
+                    clean_logins.append(clean_login)
+                
                 fig = px.bar(
-                    x=data['Day'],
-                    y=data['Logins'],
+                    x=clean_days,
+                    y=clean_logins,
                     title='Daily Mobilize Signups',
-                    color=data['Logins'],
+                    color=clean_logins,
                     color_continuous_scale='Blues'
                 )
                 fig.update_layout(
@@ -376,6 +398,7 @@ def create_dash_app(flask_app):
                     x=0.5, y=0.5, showarrow=False,
                     font=dict(size=16, color="red")
                 )
+                error_fig.update_layout(title="Daily Mobilize Signups")
                 return error_fig
         
         # Return loading figure
@@ -398,13 +421,46 @@ def create_dash_app(flask_app):
         if stored_data and stored_data.get('recent_activity'):
             data = stored_data['recent_activity']
             try:
+                # Validate and clean data
+                weeks = data.get('Week', [])
+                logins = data.get('Logins', [])
+                registrations = data.get('Registrations', [])
+                
+                # Ensure all data arrays have the same length and contain valid numbers
+                if not weeks or not logins or not registrations:
+                    raise ValueError("Missing required data arrays")
+                
+                # Clean and validate numeric data
+                clean_logins = []
+                clean_registrations = []
+                clean_weeks = []
+                
+                for i in range(min(len(weeks), len(logins), len(registrations))):
+                    # Validate login values
+                    login_val = logins[i]
+                    if isinstance(login_val, (int, float)) and not (isinstance(login_val, float) and (login_val != login_val)):  # Check for NaN
+                        clean_login = float(login_val)
+                    else:
+                        clean_login = 0.0
+                    
+                    # Validate registration values
+                    reg_val = registrations[i]
+                    if isinstance(reg_val, (int, float)) and not (isinstance(reg_val, float) and (reg_val != reg_val)):  # Check for NaN
+                        clean_reg = float(reg_val)
+                    else:
+                        clean_reg = 0.0
+                    
+                    clean_logins.append(clean_login)
+                    clean_registrations.append(clean_reg)
+                    clean_weeks.append(str(weeks[i]))
+                
                 # Use plotly graph objects for more reliable chart creation
                 fig = go.Figure()
                 
                 # Add Mobilize trace
                 fig.add_trace(go.Scatter(
-                    x=data['Week'],
-                    y=data['Logins'],
+                    x=clean_weeks,
+                    y=clean_logins,
                     mode='lines+markers',
                     name='Mobilize',
                     line=dict(color='#36A2EB', width=3),
@@ -412,9 +468,9 @@ def create_dash_app(flask_app):
                 ))
                 
                 # Add Registrations trace (scaled for visibility)
-                registrations_scaled = [x * 10 for x in data['Registrations']]
+                registrations_scaled = [x * 10 for x in clean_registrations]
                 fig.add_trace(go.Scatter(
-                    x=data['Week'],
+                    x=clean_weeks,
                     y=registrations_scaled,
                     mode='lines+markers',
                     name='Registrations (×10)',
@@ -440,6 +496,7 @@ def create_dash_app(flask_app):
                     x=0.5, y=0.5, showarrow=False,
                     font=dict(size=16, color="red")
                 )
+                error_fig.update_layout(title='Recent Activity Trends')
                 return error_fig
         
         # Return loading figure

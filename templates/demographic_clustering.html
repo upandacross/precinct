@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Demographic Clustering Analysis - Precinct Leaders App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1><i class="fas fa-users-cog"></i> Demographic Clustering Analysis</h1>
+                <p class="lead">County-wide demographic patterns and strategic insights for targeted outreach</p>
+            </div>
+            <div>
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> <strong>Scope:</strong> {{ scope_description }} | <strong>Analysis Date:</strong> {{ clustering_data.overview.analysis_date }}
+        </div>
+    </div>
+</div>
+
+<!-- Overview Statistics -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h3>{{ clustering_data.overview.total_tracts }}</h3>
+                <p><i class="fas fa-map"></i> Census Tracts</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                <h3>{{ "{:,}".format(clustering_data.overview.population_range.min) }} - {{ "{:,}".format(clustering_data.overview.population_range.max) }}</h3>
+                <p><i class="fas fa-users"></i> Population Range</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                <h3>${{ "{:,}".format(clustering_data.overview.income_range.min|int) }} - ${{ "{:,}".format(clustering_data.overview.income_range.max|int) }}</h3>
+                <p><i class="fas fa-dollar-sign"></i> Income Range</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                <h3>{{ clustering_data.overview.county }}</h3>
+                <p><i class="fas fa-map-marker-alt"></i> County Focus</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clustering Results -->
+<div class="row mt-4">
+    <!-- Population & Housing Clustering -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-home"></i> Population & Housing Clustering</h5>
+                <small class="text-muted">{{ clustering_data.population_housing.clusters }} clusters | Silhouette Score: {{ clustering_data.population_housing.silhouette_score }}</small>
+            </div>
+            <div class="card-body">
+                {% for cluster in clustering_data.population_housing.distribution %}
+                <div class="mb-3 p-3 border-start border-primary border-3" style="background-color: rgba(54, 162, 235, 0.1);">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h6 class="mb-0">Cluster {{ cluster.id }}</h6>
+                            <span class="badge bg-primary">{{ cluster.tracts }} tracts</span>
+                        </div>
+                        <div class="col-md-5">
+                            <strong>{{ "{:,}".format(cluster.avg_pop) }}</strong> avg population
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">{{ cluster.description }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Economic Clustering -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Economic Clustering</h5>
+                <small class="text-muted">{{ clustering_data.economic.clusters }} clusters | Silhouette Score: {{ clustering_data.economic.silhouette_score }} (Good separation)</small>
+            </div>
+            <div class="card-body">
+                {% for cluster in clustering_data.economic.distribution %}
+                <div class="mb-3 p-3 border-start border-success border-3" style="background-color: rgba(40, 167, 69, 0.1);">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h6 class="mb-0">Cluster {{ cluster.id }}</h6>
+                            <span class="badge bg-success">{{ cluster.tracts }} tracts</span>
+                        </div>
+                        <div class="col-md-5">
+                            <strong>${{ "{:,}".format(cluster.avg_income|int) }}</strong> avg income
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">{{ cluster.description }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Education Clustering -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-graduation-cap"></i> Education Clustering</h5>
+                <small class="text-muted">{{ clustering_data.education.clusters }} clusters | Silhouette Score: {{ clustering_data.education.silhouette_score }} ⭐ <strong>Best clustering</strong></small>
+            </div>
+            <div class="card-body">
+                {% for cluster in clustering_data.education.distribution %}
+                <div class="mb-3 p-3 border-start border-warning border-3" style="background-color: rgba(255, 193, 7, 0.1);">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h6 class="mb-0">Cluster {{ cluster.id }}</h6>
+                            <span class="badge bg-warning text-dark">{{ cluster.tracts }} tracts</span>
+                        </div>
+                        <div class="col-md-5">
+                            <strong>{{ cluster.education_rate }}%</strong> education rate
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">{{ cluster.description }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Precinct Distribution -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-map-marked-alt"></i> Precinct Distribution by Political Clusters</h5>
+                <small class="text-muted">Precincts grouped by comprehensive clustering analysis</small>
+            </div>
+            <div class="card-body">
+                {% if precinct_distribution %}
+                    {% for cluster_id, cluster_data in precinct_distribution.items() %}
+                    <div class="mb-3 p-3 border-start border-info border-3" style="background-color: rgba(13, 202, 240, 0.1);">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <h6 class="mb-0">Cluster {{ cluster_id }}</h6>
+                                <span class="badge bg-info">{{ cluster_data.count }} precincts</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ cluster_data.avg_dem_pct }}%</strong> avg Dem<br>
+                                <small class="text-muted">{{ cluster_data.avg_flippability }} flippability</small>
+                            </div>
+                            <div class="col-md-5">
+                                <small class="text-muted">
+                                    <strong>Precincts:</strong> 
+                                    {% for precinct in cluster_data.precincts[:8] %}
+                                        <span class="badge bg-light text-dark me-1">{{ precinct }}</span>
+                                    {% endfor %}
+                                    {% if cluster_data.precincts|length > 8 %}
+                                        <span class="text-muted cursor-pointer" 
+                                              data-bs-toggle="tooltip" 
+                                              data-bs-placement="top" 
+                                              data-bs-html="true"
+                                              title="<strong>All Precincts in Cluster {{ cluster_id }}:</strong><br>{{ cluster_data.precincts|join(', ') }}">
+                                            +{{ cluster_data.precincts|length - 8 }} more
+                                        </span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>Precinct data not available.</strong> Run precinct clustering analysis first to see political cluster distributions.
+                        <br><br>
+                        <a href="{{ url_for('clustering_analysis') }}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-chart-scatter"></i> Go to Precinct Clustering
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Strategic Insights -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-lightbulb"></i> Strategic Campaign Insights</h5>
+            </div>
+            <div class="card-body">
+                <!-- High Opportunity Areas -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6><i class="fas fa-target"></i> High-Opportunity Demographics</h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h4 class="text-primary">{{ clustering_data.strategic_insights.high_opportunity.high_income_tracts }}</h4>
+                                    <small>High-Income Tracts</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h4 class="text-success">{{ clustering_data.strategic_insights.high_opportunity.remote_work_hotspots }}</h4>
+                                    <small>Remote Work Hotspots</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h4 class="text-warning">{{ clustering_data.strategic_insights.high_opportunity.highly_educated_areas }}</h4>
+                                    <small>Highly Educated Areas</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h4 class="text-info">{{ clustering_data.strategic_insights.high_opportunity.high_density_tracts }}</h4>
+                                    <small>High-Density Tracts</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Targeting Strategies -->
+                <div class="row">
+                    <div class="col-12">
+                        <h6><i class="fas fa-bullseye"></i> Targeted Campaign Strategies</h6>
+                        {% for strategy in clustering_data.strategic_insights.targeting_strategies %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <h6 class="text-primary">{{ strategy.category }}</h6>
+                                        <span class="badge bg-secondary">{{ strategy.tracts }} tracts</span>
+                                        {% if strategy.rate is defined %}
+                                            <br><small>{{ strategy.rate }}% education rate</small>
+                                        {% elif strategy.income is defined %}
+                                            <br><small>${{ "{:,}".format(strategy.income|int) }}+ income</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Strategy:</strong>
+                                        <p class="mb-0">{{ strategy.strategy }}</p>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <strong>Demographics:</strong>
+                                        <p class="mb-0">{{ strategy.demographics }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Administrative Actions -->
+<div class="row mt-4 mb-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tools"></i> Administrative Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ url_for('clustering_analysis') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-chart-scatter"></i> Precinct Clustering
+                        </a>
+                        <a href="{{ url_for('flippable_analysis') }}" class="btn btn-outline-success">
+                            <i class="fas fa-chart-bar"></i> Flippable Analysis
+                        </a>
+                        {% if user.is_admin %}
+                            <a href="{{ url_for('analysis') }}" class="btn btn-outline-info">
+                                <i class="fas fa-chart-line"></i> County Analytics
+                            </a>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-2 mt-md-0">
+                        <a href="/" class="btn btn-primary btn-lg">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Recommendations -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-success">
+            <h5><i class="fas fa-rocket"></i> Implementation Recommendations</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>🎯 Immediate Actions</h6>
+                    <ul>
+                        <li><strong>Priority Tier 1:</strong> High-education, high-income overlap areas</li>
+                        <li><strong>Priority Tier 2:</strong> Remote work communities with growth potential</li>
+                        <li><strong>Priority Tier 3:</strong> Large population clusters for scale impact</li>
+                        <li><strong>Message Customization:</strong> Tailor by education and economic clusters</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>📈 Advanced Integration</h6>
+                    <ul>
+                        <li><strong>Multi-Level Strategy:</strong> Combine with precinct political data</li>
+                        <li><strong>Resource Optimization:</strong> Coordinate field operations across datasets</li>
+                        <li><strong>Temporal Tracking:</strong> Monitor demographic shifts over time</li>
+                        <li><strong>Cross-Cluster Analysis:</strong> Identify multi-opportunity tracts</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom CSS for tooltips -->
+<style>
+.cursor-pointer {
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+.cursor-pointer:hover {
+    color: #0d6efd !important;
+}
+</style>
+
+<!-- JavaScript for tooltip initialization -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            html: true,
+            delay: { "show": 300, "hide": 100 }
+        });
+    });
+});
+</script>
+
+{% endblock %}

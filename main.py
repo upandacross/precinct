@@ -1030,8 +1030,28 @@ def create_app():
                 else:
                     precinct_summaries[precinct_key]['avg_dva'] = 'N/A'
             
-            # Sort precincts by county then precinct number
-            sorted_precincts = sorted(precinct_summaries.items(), key=lambda x: (x[1]['county'], x[1]['precinct']))
+            # Sort precincts by county then precinct number (numeric sorting with zero-padded display)
+            def sort_key(item):
+                county = item[1]['county']
+                precinct = item[1]['precinct']
+                # Convert precinct to integer for numeric sorting, fallback to 999999 for non-numeric
+                try:
+                    precinct_num = int(precinct)
+                except (ValueError, TypeError):
+                    precinct_num = 999999  # Put non-numeric precincts at the end
+                return (county, precinct_num)
+            
+            sorted_precincts = sorted(precinct_summaries.items(), key=sort_key)
+            
+            # Zero-pad precinct numbers for display
+            for precinct_key, precinct_data in sorted_precincts:
+                try:
+                    # Zero-pad numeric precincts to 3 digits
+                    precinct_num = int(precinct_data['precinct'])
+                    precinct_data['precinct'] = f"{precinct_num:03d}"
+                except (ValueError, TypeError):
+                    # Leave non-numeric precincts as-is
+                    pass
             
             return render_template('flippable_analysis.html', 
                                  county_summaries=county_summaries,
@@ -1086,6 +1106,141 @@ def create_app():
                              cluster_summary=cluster_summary,
                              county_insights=county_insights,
                              census_available=census_loaded)
+
+    @app.route('/demographic-clustering', endpoint='demographic_clustering')
+    @login_required
+    def demographic_clustering():
+        """County-wide Demographic Clustering Analysis - Admin and county users only."""
+        # Restrict access to admin and county users only
+        if not (current_user.is_admin or current_user.is_county):
+            flash('Access denied. This page is available to administrators and county coordinators only.', 'error')
+            return redirect(url_for('index'))
+        
+        try:
+            # Load precinct clustering data for precinct distribution analysis
+            from services.clustering_service import ClusteringService
+            clustering_service = ClusteringService()
+            county_filter = None if current_user.is_admin else current_user.county
+            precinct_loaded = clustering_service.load_precinct_clustering_data(county_filter=county_filter)
+            
+            # Get scope description - demographics clustering is always county-specific
+            scope_description = f"{current_user.county} County"
+            
+            # Organize precincts by clustering results if data is available
+            precinct_distribution = {}
+            if precinct_loaded and clustering_service.precinct_data is not None:
+                import pandas as pd
+                df = clustering_service.precinct_data
+                
+                # Group precincts by comprehensive cluster
+                cluster_groups = df.groupby('comprehensive_cluster')
+                for cluster_id, group in cluster_groups:
+                    precinct_list = group['precinct'].tolist()
+                    avg_flippability = group['flippability_score'].mean()
+                    avg_dem_pct = group['dem_pct'].mean()
+                    
+                    precinct_distribution[cluster_id] = {
+                        'precincts': precinct_list,
+                        'count': len(precinct_list),
+                        'avg_flippability': round(avg_flippability, 2),
+                        'avg_dem_pct': round(avg_dem_pct, 1),
+                        'description': f"Cluster {cluster_id}"
+                    }
+            
+            # Census tract clustering data (based on the analysis document)
+            clustering_data = {
+                'overview': {
+                    'total_tracts': 94,
+                    'county': 'Forsyth',
+                    'state': 'North Carolina',
+                    'population_range': {'min': 1217, 'max': 8393},
+                    'income_range': {'min': 17076, 'max': 168125},
+                    'analysis_date': 'October 21, 2025'
+                },
+                'population_housing': {
+                    'clusters': 4,
+                    'silhouette_score': 0.285,
+                    'distribution': [
+                        {'id': 0, 'tracts': 4, 'avg_pop': 4778, 'description': 'High population areas'},
+                        {'id': 1, 'tracts': 50, 'avg_pop': 3592, 'description': 'Largest cluster'},
+                        {'id': 2, 'tracts': 18, 'avg_pop': 6416, 'description': 'Highest population density'},
+                        {'id': 3, 'tracts': 22, 'avg_pop': 3016, 'description': 'Lower population areas'}
+                    ]
+                },
+                'economic': {
+                    'clusters': 5,
+                    'silhouette_score': 0.328,
+                    'distribution': [
+                        {'id': 0, 'tracts': 16, 'avg_income': 95336, 'description': 'High-income areas'},
+                        {'id': 1, 'tracts': 34, 'avg_income': 50344, 'description': 'Largest middle-income group'},
+                        {'id': 2, 'tracts': 13, 'avg_income': 36852, 'description': 'Lower-middle income'},
+                        {'id': 3, 'tracts': 30, 'avg_income': 79481, 'description': 'Upper-middle income'},
+                        {'id': 4, 'tracts': 1, 'avg_income': 36574, 'description': 'Single low-income outlier'}
+                    ]
+                },
+                'education': {
+                    'clusters': 4,
+                    'silhouette_score': 0.469,
+                    'distribution': [
+                        {'id': 0, 'tracts': 10, 'education_rate': 52.6, 'description': 'Highly educated'},
+                        {'id': 1, 'tracts': 55, 'education_rate': 14.6, 'description': 'Largest, lower education'},
+                        {'id': 2, 'tracts': 25, 'education_rate': 30.4, 'description': 'Moderate education'},
+                        {'id': 3, 'tracts': 4, 'education_rate': 38.8, 'description': 'Above-average education'}
+                    ]
+                },
+                'geographic': {
+                    'clusters': 6,
+                    'silhouette_score': 0.332,
+                    'distribution': [
+                        {'id': 0, 'tracts': 21, 'latitude': 36.153, 'description': 'Northern area'},
+                        {'id': 1, 'tracts': 17, 'latitude': 36.098, 'description': 'South-central area'},
+                        {'id': 2, 'tracts': 3, 'latitude': 36.150, 'description': 'Small northern cluster'},
+                        {'id': 3, 'tracts': 6, 'latitude': 36.210, 'description': 'Northernmost area'},
+                        {'id': 4, 'tracts': 14, 'latitude': 36.037, 'description': 'Southern area'},
+                        {'id': 5, 'tracts': 33, 'latitude': 36.090, 'description': 'Largest geographic cluster'}
+                    ]
+                },
+                'strategic_insights': {
+                    'high_opportunity': {
+                        'high_income_tracts': 19,
+                        'remote_work_hotspots': 19,
+                        'highly_educated_areas': 19,
+                        'high_density_tracts': 19
+                    },
+                    'targeting_strategies': [
+                        {
+                            'category': 'High-Education Areas',
+                            'tracts': 10,
+                            'rate': 52.6,
+                            'strategy': 'Policy-focused messaging, detailed position papers',
+                            'demographics': 'Likely engaged voters, responsive to complex issues'
+                        },
+                        {
+                            'category': 'High-Income Areas',
+                            'tracts': 16,
+                            'income': 95000,
+                            'strategy': 'Economic stability messaging, tax policy focus',
+                            'demographics': 'Homeowners, established community members'
+                        },
+                        {
+                            'category': 'Remote Work Hotspots',
+                            'tracts': 19,
+                            'strategy': 'Technology policy, work-life balance issues',
+                            'demographics': 'Professional class, flexible schedules'
+                        }
+                    ]
+                }
+            }
+            
+            return render_template('demographic_clustering.html', 
+                                 clustering_data=clustering_data,
+                                 precinct_distribution=precinct_distribution,
+                                 scope_description=scope_description,
+                                 user=current_user)
+                                 
+        except Exception as e:
+            flash(f'Error loading demographic clustering analysis: {str(e)}', 'error')
+            return redirect(url_for('index'))
 
     @app.route('/website-users')
     @login_required

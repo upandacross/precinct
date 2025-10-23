@@ -2,45 +2,22 @@
 {% block title %}{{ display_name }} - Documentation{% endblock %}
 
 {% block content %}
-<!-- Header Section -->
-<div class="container mt-4 mb-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="bg-alpha rounded p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h1 class="mb-0">
-                        {% if is_markdown %}
-                            <i class="fab fa-markdown text-primary"></i>
-                        {% else %}
-                            <i class="fas fa-file-alt text-secondary"></i>
-                        {% endif %}
-                        {{ display_name }}
-                    </h1>
-                    <div class="btn-group">
-                        {% if current_user.is_authenticated and current_user.is_admin %}
-                            <a href="/admin/doc_admin/edit/{{ filename }}" class="btn btn-outline-warning btn-sm">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                        {% endif %}
-                        <a href="{{ url_for('documentation') }}" class="btn btn-outline-secondary btn-sm">
-                            <i class="fas fa-list"></i> All Docs
-                        </a>
-                    </div>
-                </div>
-
-                <div>
-                    <small class="text-muted">
-                        <i class="fas fa-file"></i> File: <code>{{ filename }}</code> |
-                        <i class="fas fa-calendar"></i> Last Modified: {{ last_modified.strftime('%Y-%m-%d %H:%M') }}
-                    </small>
-                </div>
-            </div>
-        </div>
+<!-- Action Buttons (floating top-right) -->
+<div class="position-fixed" style="top: 100px; right: 20px; z-index: 1000;">
+    <div class="btn-group-vertical">
+        {% if current_user.is_authenticated and current_user.is_admin %}
+            <a href="/admin/doc_admin/edit/{{ filename }}" class="btn btn-warning btn-sm mb-2" title="Edit Document">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+        {% endif %}
+        <a href="{{ url_for('documentation') }}" class="btn btn-secondary btn-sm" title="All Documents">
+            <i class="fas fa-list"></i> All Docs
+        </a>
     </div>
 </div>
 
 <!-- Full Width Content Section -->
-<div class="container-fluid px-3">
+<div class="container-fluid px-3 mt-3">
     <div class="row">
         <div class="col-12">
             <div class="documentation-content bg-white rounded p-4">
