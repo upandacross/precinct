@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}{{ display_name }} - Documentation{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="container mt-4 mb-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="bg-alpha rounded p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h1 class="mb-0">
+                        {% if is_markdown %}
+                            <i class="fab fa-markdown text-primary"></i>
+                        {% else %}
+                            <i class="fas fa-file-alt text-secondary"></i>
+                        {% endif %}
+                        {{ display_name }}
+                    </h1>
+                    <div class="btn-group">
+                        {% if current_user.is_authenticated and current_user.is_admin %}
+                            <a href="/admin/doc_admin/edit/{{ filename }}" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                        {% endif %}
+                        <a href="{{ url_for('documentation') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-list"></i> All Docs
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <small class="text-muted">
+                        <i class="fas fa-file"></i> File: <code>{{ filename }}</code> |
+                        <i class="fas fa-calendar"></i> Last Modified: {{ last_modified.strftime('%Y-%m-%d %H:%M') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Full Width Content Section -->
+<div class="container-fluid px-3">
+    <div class="row">
+        <div class="col-12">
+            <div class="documentation-content bg-white rounded p-4">
+                    {% if is_markdown %}
+                        <div class="markdown-content border rounded p-3" style="background-color: rgba(255, 255, 255, 0.95); color: #333;">
+                            {{ content | safe }}
+                        </div>
+                    {% else %}
+                        <pre class="bg-light text-dark p-3 rounded" style="white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 14px;">{{ content }}</pre>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Back Button Section -->
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="bg-alpha rounded p-3">
+                <a href="{{ url_for('documentation') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Documentation
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if is_markdown %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const content = {{ content | tojson }};
+    const markdownContent = document.querySelector('.markdown-content');
+    if (markdownContent && content) {
+        markdownContent.innerHTML = marked.parse(content);
+    }
+});
+</script>
+{% endif %}
+
+<style>
+.markdown-content {
+    line-height: 1.6;
+}
+
+.markdown-content h1, 
+.markdown-content h2, 
+.markdown-content h3, 
+.markdown-content h4, 
+.markdown-content h5, 
+.markdown-content h6 {
+    color: #2c3e50;
+    margin-top: 24px;
+    margin-bottom: 16px;
+}
+
+.markdown-content h1 {
+    border-bottom: 2px solid #eee;
+    padding-bottom: 8px;
+}
+
+.markdown-content h2 {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+}
+
+.markdown-content code {
+    background-color: #f8f9fa;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    color: #d63384;
+}
+
+.markdown-content pre {
+    background-color: #f8f9fa !important;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
+.markdown-content pre code {
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+.markdown-content blockquote {
+    border-left: 4px solid #dfe2e5;
+    padding-left: 16px;
+    margin-left: 0;
+    color: #6a737d;
+}
+
+.markdown-content table {
+    border-collapse: collapse;
+    margin: 16px 0;
+}
+
+.markdown-content table th,
+.markdown-content table td {
+    border: 1px solid #dfe2e5;
+    padding: 8px 12px;
+}
+
+.markdown-content table th {
+    background-color: #f6f8fa;
+    font-weight: bold;
+}
+
+.markdown-content ul, 
+.markdown-content ol {
+    padding-left: 24px;
+}
+
+.markdown-content li {
+    margin-bottom: 4px;
+}
+
+.markdown-content a {
+    color: #0366d6;
+    text-decoration: none;
+}
+
+.markdown-content a:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

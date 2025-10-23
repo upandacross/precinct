@@ -1,0 +1,148 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Rename File: {{ display_name }}</h1>
+                <div class="btn-group">
+                    <a href="{{ url_for('doc_admin.view_file', filename=filename) }}" class="btn btn-info">
+                        <i class="fas fa-eye"></i> View File
+                    </a>
+                    <a href="{{ url_for('doc_admin.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-list"></i> Back to List
+                    </a>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <small class="text-muted">
+                    <i class="fas fa-file"></i> Current filename: <code>{{ filename }}</code>
+                </small>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-edit"></i> Rename Documentation File</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="new_filename" class="form-label">New Filename:</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="new_filename" 
+                                           name="new_filename" 
+                                           value="{{ filename }}"
+                                           required
+                                           pattern="[a-zA-Z0-9_.-]+"
+                                           title="Only letters, numbers, underscores, hyphens, and dots are allowed">
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Only letters, numbers, underscores (_), hyphens (-), and dots (.) are allowed. 
+                                        File extension will be preserved automatically if not included.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Current Extension:</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           value="{{ filename.split('.') | last if '.' in filename else 'No extension' }}" 
+                                           disabled>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Warning:</strong> Renaming this file will update its filename on the filesystem. 
+                            Any direct links to this file will need to be updated.
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-edit"></i> Rename File
+                            </button>
+                            <a href="{{ url_for('doc_admin.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- File Preview -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-eye"></i> Current File Preview</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <strong>{{ filename }}</strong>
+                        </div>
+                        <div class="text-muted">
+                            <span class="badge bg-{{ 'primary' if filename.endswith('.md') else 'secondary' }}">
+                                {{ filename.split('.') | last | upper if '.' in filename else 'TXT' }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-muted small">
+                        This is the file you are about to rename. Make sure this is the correct file before proceeding.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filenameInput = document.getElementById('new_filename');
+    
+    // Auto-focus and select the filename without extension for easier editing
+    filenameInput.focus();
+    const filename = filenameInput.value;
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex > 0) {
+        filenameInput.setSelectionRange(0, lastDotIndex);
+    } else {
+        filenameInput.select();
+    }
+    
+    // Real-time validation feedback
+    filenameInput.addEventListener('input', function() {
+        const value = this.value;
+        const pattern = /^[a-zA-Z0-9_.-]+$/;
+        
+        if (!value) {
+            this.classList.add('is-invalid');
+            this.classList.remove('is-valid');
+        } else if (!pattern.test(value)) {
+            this.classList.add('is-invalid');
+            this.classList.remove('is-valid');
+        } else {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        }
+    });
+});
+</script>
+{% endblock %}

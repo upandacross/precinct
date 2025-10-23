@@ -1,0 +1,129 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Edit: {{ display_name }}</h1>
+                <div class="btn-group">
+                    <a href="{{ url_for('doc_admin.view_file', filename=filename) }}" class="btn btn-info">
+                        <i class="fas fa-eye"></i> View File
+                    </a>
+                    <a href="{{ url_for('doc_admin.rename_file', filename=filename) }}" class="btn btn-warning">
+                        <i class="fas fa-signature"></i> Rename File
+                    </a>
+                    <a href="{{ url_for('doc_admin.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-list"></i> Back to List
+                    </a>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <small class="text-muted">
+                    <i class="fas fa-file"></i> File: <code>{{ filename }}</code>
+                </small>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="content" class="form-label">File Content:</label>
+                            <textarea class="form-control" id="content" name="content" rows="25" style="font-family: 'Courier New', monospace; font-size: 14px;">{{ content }}</textarea>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <div class="btn-group">
+                                {% if filename.endswith('.md') %}
+                                    <button type="button" class="btn btn-outline-primary" onclick="togglePreview()">
+                                        <i class="fas fa-eye"></i> Toggle Preview
+                                    </button>
+                                {% endif %}
+                                <a href="{{ url_for('show_documentation', filename=filename) }}" class="btn btn-outline-info" target="_blank">
+                                    <i class="fas fa-external-link-alt"></i> Public View
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            {% if filename.endswith('.md') %}
+            <div class="card mt-3" id="preview-card" style="display: none;">
+                <div class="card-header">
+                    <h5><i class="fas fa-eye"></i> Markdown Preview</h5>
+                </div>
+                <div class="card-body">
+                    <div id="markdown-preview" class="markdown-content"></div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if filename.endswith('.md') %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+function togglePreview() {
+    const previewCard = document.getElementById('preview-card');
+    const content = document.getElementById('content').value;
+    const preview = document.getElementById('markdown-preview');
+    
+    if (previewCard.style.display === 'none') {
+        preview.innerHTML = marked.parse(content);
+        previewCard.style.display = 'block';
+    } else {
+        previewCard.style.display = 'none';
+    }
+}
+
+// Auto-update preview when typing (with debounce)
+let previewTimeout;
+document.getElementById('content').addEventListener('input', function() {
+    clearTimeout(previewTimeout);
+    previewTimeout = setTimeout(function() {
+        const previewCard = document.getElementById('preview-card');
+        if (previewCard.style.display !== 'none') {
+            const content = document.getElementById('content').value;
+            const preview = document.getElementById('markdown-preview');
+            preview.innerHTML = marked.parse(content);
+        }
+    }, 500);
+});
+</script>
+{% endif %}
+
+<style>
+.markdown-content {
+    line-height: 1.6;
+}
+.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6 {
+    color: #333;
+    margin-top: 24px;
+    margin-bottom: 16px;
+}
+.markdown-content h1 { border-bottom: 2px solid #eee; padding-bottom: 8px; }
+.markdown-content h2 { border-bottom: 1px solid #eee; padding-bottom: 4px; }
+.markdown-content code { background-color: #f8f9fa; padding: 2px 4px; border-radius: 3px; }
+.markdown-content pre { background-color: #f8f9fa; padding: 16px; border-radius: 6px; overflow-x: auto; }
+.markdown-content blockquote { border-left: 4px solid #dfe2e5; padding-left: 16px; color: #6a737d; }
+.markdown-content table { border-collapse: collapse; margin: 16px 0; }
+.markdown-content table th, .markdown-content table td { border: 1px solid #dfe2e5; padding: 8px 12px; }
+.markdown-content table th { background-color: #f6f8fa; font-weight: bold; }
+</style>
+{% endblock %}

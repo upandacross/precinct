@@ -1,12 +1,13 @@
 import os
+import re
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify, send_file, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify, send_file, send_from_directory, current_app
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from flask_admin import Admin, AdminIndexView, expose
+from flask_admin import Admin, AdminIndexView, expose, BaseView
 from flask_admin.contrib.sqla import ModelView
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -84,6 +85,179 @@ class SecureAdminIndexView(AdminIndexView):
         if not current_user.is_authenticated or not current_user.is_admin:
             return redirect(url_for('login'))
         return self.render('admin/index.html')
+
+class DocumentationView(BaseView):
+    """Flask-Admin view for managing documentation files."""
+    
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.is_admin
+    
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('login'))
+    
+    @expose('/')
+    def index(self):
+        """List all documentation files."""
+        doc_dir = os.path.join(current_app.root_path, 'doc')
+        docs = []
+        
+        if os.path.exists(doc_dir):
+            for filename in os.listdir(doc_dir):
+                if filename.endswith('.md') or filename.endswith('.txt'):
+                    filepath = os.path.join(doc_dir, filename)
+                    if os.path.isfile(filepath):
+                        stat_info = os.stat(filepath)
+                        last_modified = datetime.fromtimestamp(stat_info.st_mtime)
+                        
+                        docs.append({
+                            'filename': filename,
+                            'display_name': filename.replace('_', ' ').replace('.md', '').replace('.txt', '').title(),
+                            'last_modified': last_modified,
+                            'size': stat_info.st_size,
+                            'extension': os.path.splitext(filename)[1]
+                        })
+        
+        docs.sort(key=lambda x: x['filename'])
+        return self.render('admin/documentation.html', docs=docs)
+    
+    @expose('/view/<filename>')
+    def view_file(self, filename):
+        """View a specific documentation file."""
+        doc_dir = os.path.join(current_app.root_path, 'doc')
+        filepath = os.path.join(doc_dir, filename)
+        
+        # Security check
+        if not os.path.abspath(filepath).startswith(os.path.abspath(doc_dir)):
+            abort(404)
+        
+        if not os.path.exists(filepath):
+            abort(404)
+        
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            stat_info = os.stat(filepath)
+            last_modified = datetime.fromtimestamp(stat_info.st_mtime)
+            is_markdown = filename.endswith('.md')
+            
+            return self.render('admin/view_documentation.html', 
+                             content=content,
+                             filename=filename,
+                             display_name=filename.replace('_', ' ').replace('.md', '').replace('.txt', '').title(),
+                             last_modified=last_modified,
+                             is_markdown=is_markdown)
+        
+        except Exception as e:
+            flash(f'Error reading file: {str(e)}', 'danger')
+            return redirect(url_for('.index'))
+    
+    @expose('/edit/<filename>', methods=['GET', 'POST'])
+    def edit_file(self, filename):
+        """Edit a documentation file."""
+        doc_dir = os.path.join(current_app.root_path, 'doc')
+        filepath = os.path.join(doc_dir, filename)
+        
+        # Security check
+        if not os.path.abspath(filepath).startswith(os.path.abspath(doc_dir)):
+            abort(404)
+        
+        if not os.path.exists(filepath):
+            abort(404)
+        
+        if request.method == 'POST':
+            content = request.form.get('content', '')
+            try:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                flash(f'File {filename} updated successfully!', 'success')
+                return redirect(url_for('.view_file', filename=filename))
+            except Exception as e:
+                flash(f'Error saving file: {str(e)}', 'danger')
+        
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            return self.render('admin/edit_documentation.html',
+                             content=content,
+                             filename=filename,
+                             display_name=filename.replace('_', ' ').replace('.md', '').replace('.txt', '').title())
+        
+        except Exception as e:
+            flash(f'Error reading file: {str(e)}', 'danger')
+            return redirect(url_for('.index'))
+    
+    @expose('/rename/<filename>', methods=['GET', 'POST'])
+    def rename_file(self, filename):
+        """Rename a documentation file."""
+        doc_dir = os.path.join(current_app.root_path, 'doc')
+        old_filepath = os.path.join(doc_dir, filename)
+        
+        # Security check
+        if not os.path.abspath(old_filepath).startswith(os.path.abspath(doc_dir)):
+            abort(404)
+        
+        if not os.path.exists(old_filepath):
+            abort(404)
+        
+        if request.method == 'POST':
+            new_filename = request.form.get('new_filename', '').strip()
+            
+            if not new_filename:
+                flash('New filename cannot be empty', 'danger')
+            elif new_filename == filename:
+                flash('New filename is the same as current filename', 'warning')
+                return redirect(url_for('.index'))
+            else:
+                # Validate filename - only allow letters, numbers, underscores, hyphens, and dots
+                if not re.match(r'^[a-zA-Z0-9_.-]+$', new_filename):
+                    flash('Filename contains invalid characters. Only letters, numbers, underscores, hyphens, and dots are allowed.', 'danger')
+                else:
+                    # Ensure file extension is preserved if not provided
+                    old_ext = os.path.splitext(filename)[1]
+                    new_ext = os.path.splitext(new_filename)[1]
+                    
+                    if not new_ext and old_ext:
+                        new_filename += old_ext
+                    
+                    new_filepath = os.path.join(doc_dir, new_filename)
+                    
+                    # Check if new filename already exists
+                    if os.path.exists(new_filepath):
+                        flash(f'A file named "{new_filename}" already exists', 'danger')
+                    else:
+                        try:
+                            os.rename(old_filepath, new_filepath)
+                            flash(f'File renamed from "{filename}" to "{new_filename}" successfully!', 'success')
+                            return redirect(url_for('.view_file', filename=new_filename))
+                        except Exception as e:
+                            flash(f'Error renaming file: {str(e)}', 'danger')
+        
+        return self.render('admin/rename_documentation.html',
+                         filename=filename,
+                         display_name=filename.replace('_', ' ').replace('.md', '').replace('.txt', '').title())
+    
+    @expose('/delete/<filename>', methods=['POST'])
+    def delete_file(self, filename):
+        """Delete a documentation file."""
+        doc_dir = os.path.join(current_app.root_path, 'doc')
+        filepath = os.path.join(doc_dir, filename)
+        
+        # Security check
+        if not os.path.abspath(filepath).startswith(os.path.abspath(doc_dir)):
+            abort(404)
+        
+        if not os.path.exists(filepath):
+            abort(404)
+        
+        try:
+            os.remove(filepath)
+            flash(f'File "{filename}" deleted successfully!', 'success')
+        except Exception as e:
+            flash(f'Error deleting file: {str(e)}', 'danger')
+        
+        return redirect(url_for('.index'))
 
 def create_app():
     """Application factory."""
@@ -451,6 +625,74 @@ def create_app():
         session['last_activity'] = datetime.utcnow().isoformat()
         return jsonify({'status': 'extended'})
     
+    @app.route('/documentation')
+    def documentation():
+        """Display available documentation from doc directory."""
+        doc_dir = os.path.join(app.root_path, 'doc')
+        docs = []
+        
+        if os.path.exists(doc_dir):
+            for filename in os.listdir(doc_dir):
+                if filename.endswith('.md') or filename.endswith('.txt'):
+                    # Only show files that start with an uppercase letter (public visibility)
+                    if filename[0].isupper():
+                        filepath = os.path.join(doc_dir, filename)
+                        if os.path.isfile(filepath):
+                            # Get file stats for last modified date
+                            stat_info = os.stat(filepath)
+                            last_modified = datetime.fromtimestamp(stat_info.st_mtime)
+                            
+                            docs.append({
+                                'filename': filename,
+                                'display_name': filename.replace('_', ' ').replace('.md', '').replace('.txt', '').title(),
+                                'last_modified': last_modified,
+                                'size': stat_info.st_size
+                            })
+        
+        # Sort by filename
+        docs.sort(key=lambda x: x['filename'])
+        
+        return render_template('documentation.html', docs=docs)
+    
+    @app.route('/documentation/<filename>')
+    def show_documentation(filename):
+        """Display specific documentation file."""
+        doc_dir = os.path.join(app.root_path, 'doc')
+        filepath = os.path.join(doc_dir, filename)
+        
+        # Security check - ensure file is in doc directory
+        if not os.path.abspath(filepath).startswith(os.path.abspath(doc_dir)):
+            abort(404)
+        
+        # Public visibility check - only show files that start with uppercase letter
+        if not filename[0].isupper():
+            abort(404)
+        
+        if not os.path.exists(filepath):
+            abort(404)
+        
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Get file info
+            stat_info = os.stat(filepath)
+            last_modified = datetime.fromtimestamp(stat_info.st_mtime)
+            
+            # Determine content type
+            is_markdown = filename.endswith('.md')
+            
+            return render_template('show_documentation.html', 
+                                 content=content, 
+                                 filename=filename,
+                                 display_name=filename.replace('_', ' ').replace('.md', '').replace('.txt', '').title(),
+                                 last_modified=last_modified,
+                                 is_markdown=is_markdown)
+        
+        except Exception as e:
+            app.logger.error(f'Error reading documentation file {filename}: {str(e)}')
+            abort(500)
+    
     # Flask-Admin setup
     admin = Admin(
         app, 
@@ -460,6 +702,7 @@ def create_app():
         index_view=SecureAdminIndexView()
     )
     admin.add_view(UserModelView(User, db.session, name='Users'))
+    admin.add_view(DocumentationView(name='Documentation', endpoint='doc_admin'))
     
     # Dash Analytics Integration
     if DASH_AVAILABLE:
@@ -846,6 +1089,10 @@ def create_app():
         
         # Security: prevent directory traversal
         if '..' in filename or '/' in filename:
+            abort(404)
+        
+        # Visibility check - only allow files starting with uppercase letter (unless admin)
+        if not current_user.is_admin and not filename[0].isupper():
             abort(404)
         
         doc_path = os.path.join(app.root_path, 'doc', filename)

@@ -103,6 +103,17 @@
             text-shadow: none !important;
             color: black !important;
         }
+        /* Remove text shadows from documentation pages */
+        .bg-alpha h1, .bg-alpha h2, .bg-alpha h3, .bg-alpha h4, .bg-alpha h5, .bg-alpha h6 {
+            text-shadow: none !important;
+        }
+        /* Remove text shadows from all documentation content */
+        .documentation-content, .documentation-content *,
+        .markdown-content, .markdown-content *,
+        .card h6, .card h6 *,
+        .card-body, .card-body * {
+            text-shadow: none !important;
+        }
         /* Buttons on background image get white background */
         main.container .btn {
             background-color: white !important;
@@ -143,38 +154,15 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('analysis') }}">
-                                {% if current_user.is_admin or current_user.is_county %}
-                                    <i class="fas fa-chart-line"></i> County Analytics
-                                {% else %}
-                                    <i class="fas fa-chart-line"></i> Precinct Analytics
-                                {% endif %}
+                            <a class="nav-link" href="{{ url_for('documentation') }}">
+                                <i class="fas fa-book"></i> Documentation
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('flippable_races') }}">
-                                <i class="fas fa-exchange-alt"></i> Flippable Races
-                            </a>
-                        </li>
-                        {% if current_user.is_admin or current_user.is_county %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('static_content') }}">
-                                    <i class="fas fa-map"></i> Maps List
-                                </a>
-                            </li>
-                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('about') }}">
                                 <i class="fas fa-info-circle"></i> About
                             </a>
                         </li>
-                        {% if current_user.is_admin or current_user.is_county %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('website_user_report') }}">
-                                    <i class="fas fa-users"></i> Website User Report
-                                </a>
-                            </li>
-                        {% endif %}
                         {% if current_user.is_admin %}
                             <li class="nav-item">
                                 <a class="nav-link" href="/admin/user">
@@ -183,6 +171,11 @@
                             </li>
                         {% endif %}
                     {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('documentation') }}">
+                                <i class="fas fa-book"></i> Documentation
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('about') }}">
                                 <i class="fas fa-info-circle"></i> About
