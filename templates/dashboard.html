@@ -97,10 +97,16 @@
                             <a href="/admin/motd" class="btn btn-outline-info">
                                 <i class="fas fa-bullhorn"></i> Edit MOTD
                             </a>
+                            <a href="{{ url_for('website_user_report') }}" class="btn btn-outline-success">
+                                <i class="fas fa-users"></i> Website User Report
+                            </a>
                             <a href="{{ url_for('analysis') }}" class="btn btn-outline-primary">
                                 <i class="fas fa-chart-line"></i> County Analytics
                             </a>
                         {% elif user.is_county %}
+                            <a href="{{ url_for('website_user_report') }}" class="btn btn-outline-success">
+                                <i class="fas fa-users"></i> Website User Report
+                            </a>
                             <a href="{{ url_for('analysis') }}" class="btn btn-outline-primary">
                                 <i class="fas fa-chart-line"></i> County Analytics
                             </a>

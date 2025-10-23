@@ -139,6 +139,41 @@ WHERE (precinct = :precinct OR precinct = :unpadded_precinct)
 - **Template**: `templates/flippable.html` - Fixed formatting and added location display
 - **Validation**: Comprehensive user location data validation and error messaging
 
+### Website User Report Dashboard (Admin/County Only)
+**Achievement:** Separated user analytics into dedicated admin/county dashboard  
+**Status:** ✅ COMPLETE - October 22, 2025
+
+**Key Features:**
+1. **Access Control**: Restricted to admin and county coordinators only
+2. **Scope Filtering**: Admin sees all state users, county sees county users
+3. **Comprehensive Stats**: Total, active, admin, county, and regular user counts
+4. **Visual Analytics**: Interactive charts showing user type and status distribution
+5. **Precinct Breakdown**: Users organized by precinct for county coordinators
+6. **Recent Activity**: New user registrations in last 30 days
+
+**Technical Implementation:**
+- **Route**: `/website-users` with admin/county access control
+- **Template**: `templates/website_user_report.html` with Chart.js visualizations
+- **Data Scope**: Filtered by user permissions (state vs county level)
+- **Navigation**: Added to dashboard and main navigation for authorized users
+
+**Security Enhancement:**
+- Moved sensitive user analytics out of general analytics dashboard
+- Proper role-based access control implementation
+- Clear scope indication for data privacy compliance
+
+**Comprehensive Precinct View:**
+- Shows ALL precincts in county, not just those with registered users
+- Visual distinction between organized (has users) and unorganized precincts
+- Organization rate calculation and summary statistics
+- Handles both zero-padded ('012') and unpadded ('12') precinct formats
+
+**UI Layout Enhancements:**
+- Fixed footer interference with "Back to Dashboard" button
+- Implemented responsive layout with Bootstrap flexbox utilities
+- Button repositioned to bottom-right to avoid click conflicts
+- Professional spacing and alignment for optimal user experience
+
 ### Files Modified for "View My Map" Fix
 
 **Core Application Files:**

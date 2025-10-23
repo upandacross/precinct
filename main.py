@@ -15,7 +15,7 @@ from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextA
 from wtforms.validators import DataRequired, Length, Email
 from sqlalchemy import text
 from models import db, User, Map
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import get_config
 from security import add_security_headers
 from precinct_utils import normalize_precinct_id, normalize_precinct_join, create_precinct_lookup
@@ -670,6 +670,105 @@ def create_app():
                              cluster_summary=cluster_summary,
                              county_insights=county_insights,
                              census_available=census_loaded)
+
+    @app.route('/website-users')
+    @login_required
+    def website_user_report():
+        """Website User Report - Admin and County users only."""
+        # Restrict access to admin and county users only
+        if not (current_user.is_admin or current_user.is_county):
+            flash('Access denied. This feature is only available to administrators and county coordinators.', 'error')
+            return redirect(url_for('index'))
+        
+        try:
+            # Determine filter scope based on user permissions
+            if current_user.is_admin:
+                # Admin users: can see all users in their state
+                base_query = User.query.filter_by(state=current_user.state)
+                scope_description = f"All {current_user.state} Users"
+            else:  # is_county
+                # County users: filter by state and county
+                base_query = User.query.filter_by(state=current_user.state, county=current_user.county)
+                scope_description = f"{current_user.county} County Users"
+            
+            # Get user statistics
+            total_users = base_query.count()
+            admin_users = base_query.filter_by(is_admin=True).count()
+            county_users = base_query.filter_by(is_county=True, is_admin=False).count()
+            regular_users = total_users - admin_users - county_users
+            active_users = base_query.filter_by(is_active=True).count()
+            inactive_users = total_users - active_users
+            
+            # Get recent users (last 30 days)
+            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+            recent_users = base_query.filter(User.created_at >= thirty_days_ago).count()
+            
+            # Get all precincts in county and user distribution
+            precinct_distribution = {}
+            if current_user.county:
+                # First, get all precincts that exist in the county from the precincts table
+                all_precincts_query = text('''
+                    SELECT DISTINCT precinct 
+                    FROM precincts 
+                    WHERE UPPER(county) = UPPER(:county) 
+                    ORDER BY precinct
+                ''')
+                all_precincts = db.session.execute(all_precincts_query, {'county': current_user.county}).fetchall()
+                
+                # Initialize all precincts with 0 users
+                for precinct_row in all_precincts:
+                    precinct = precinct_row[0]
+                    precinct_distribution[precinct] = 0
+                
+                # If no precincts found in precincts table, fall back to candidate_vote_results
+                if not precinct_distribution:
+                    fallback_query = text('''
+                        SELECT DISTINCT precinct 
+                        FROM candidate_vote_results 
+                        WHERE UPPER(county) = UPPER(:county) 
+                        ORDER BY precinct
+                    ''')
+                    fallback_precincts = db.session.execute(fallback_query, {'county': current_user.county}).fetchall()
+                    for precinct_row in fallback_precincts:
+                        precinct = precinct_row[0]
+                        precinct_distribution[precinct] = 0
+                
+                # Now count actual users by precinct
+                precinct_query = base_query.filter(User.precinct.isnot(None))
+                for user in precinct_query.all():
+                    if user.precinct:
+                        # Handle both padded and unpadded precinct formats
+                        user_precinct = str(user.precinct).strip()
+                        padded_precinct = user_precinct.zfill(3)
+                        
+                        # Check if user's precinct (padded or unpadded) matches any known precinct
+                        if user_precinct in precinct_distribution:
+                            precinct_distribution[user_precinct] += 1
+                        elif padded_precinct in precinct_distribution:
+                            precinct_distribution[padded_precinct] += 1
+                        else:
+                            # If precinct format doesn't match, add it anyway
+                            precinct_distribution[user_precinct] = precinct_distribution.get(user_precinct, 0) + 1
+            
+            user_stats = {
+                'total': total_users,
+                'admin': admin_users,
+                'county': county_users,
+                'regular': regular_users,
+                'active': active_users,
+                'inactive': inactive_users,
+                'recent': recent_users,
+                'scope_description': scope_description,
+                'precinct_distribution': dict(sorted(precinct_distribution.items()))
+            }
+            
+            return render_template('website_user_report.html', 
+                                 user_stats=user_stats,
+                                 user=current_user)
+            
+        except Exception as e:
+            flash(f'Error loading user report: {str(e)}', 'error')
+            return redirect(url_for('index'))
 
     @app.route('/api/clustering/data')
     @login_required
