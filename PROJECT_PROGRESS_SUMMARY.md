@@ -1,8 +1,31 @@
 # Project Progress Summary - Comprehensive Documentation
 
-**Date:** October 23, 2025  
+**Date:** October 24, 2025  
 **Status:** COMPLETE - DVA analysis system + critical infrastructure fixes + documentation visibility controls  
-**Update:** Document visibility control system implemented, admin UI enhancements completed
+**Update:** Clustering explanation modal added, deployed to Digital Ocean production server
+
+---
+
+## 🔮 Future Enhancements
+
+### Campaign Candidates Table
+**Purpose:** Track current election cycle candidates for strategic targeting
+
+**Objective:** When ballots become available, create a `campaign_candidates` table to match current candidates running in contests that were historically flippable. This enables:
+
+- **Historical Pattern Matching**: Identify which current races correspond to previously flippable contests
+- **Strategic Resource Allocation**: Focus campaign efforts on current candidates in historically competitive positions
+- **Multi-Cycle Analysis**: Track performance trends across election cycles
+- **Candidate-Level Strategy**: Provide targeted support based on historical flippability data
+- **DVA Application**: Apply Democratic Voter Absenteeism insights to specific 2026/2028 candidates
+
+**Implementation Notes:**
+- Link to `flippable_races` table via office/precinct/county matching
+- Include candidate name, party, office sought, election year
+- Enable queries like: "Show me 2026 candidates running for offices that were flippable in 2024"
+- Support campaign coordination by connecting historical opportunity to current races
+
+---
 
 ## 🎯 Executive Summary
 
