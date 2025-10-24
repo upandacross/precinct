@@ -8,7 +8,10 @@
         <h1><i class="fas fa-project-diagram"></i> Precinct Clustering Analysis</h1>
         <p class="lead">Strategic insights from precinct and demographic clustering analysis</p>
     </div>
-    <div class="col-4 d-flex justify-content-end align-items-start">
+    <div class="col-4 d-flex justify-content-end align-items-start gap-2">
+        <button type="button" class="btn fw-bold" data-bs-toggle="modal" data-bs-target="#clusteringExplanationModal" style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;">
+            <i class="fas fa-question-circle"></i> Explanation
+        </button>
         <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left"></i> Go Back
         </a>
@@ -457,5 +460,86 @@ document.addEventListener('DOMContentLoaded', function() {
     background-color: #e9ecef;
 }
 </style>
+
+<!-- Clustering Explanation Modal -->
+<div class="modal fade" id="clusteringExplanationModal" tabindex="-1" aria-labelledby="clusteringExplanationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="text-shadow: none;">
+                <h5 class="modal-title text-dark" id="clusteringExplanationModalLabel" style="text-shadow: none;">
+                    <i class="fas fa-info-circle"></i> Precinct Clustering Analysis Explanation
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-dark" style="text-shadow: none;">
+                <div class="row">
+                    <div class="col-12" style="text-shadow: none;">
+                        <h6 style="text-shadow: none;"><i class="fas fa-project-diagram"></i> What is Precinct Clustering?</h6>
+                        <p style="text-shadow: none;">
+                            Precinct clustering groups precincts with similar characteristics into strategic categories (clusters 0-6). 
+                            This helps identify patterns and prioritize campaign resources across different precinct types.
+                        </p>
+                        
+                        <h6 style="text-shadow: none;"><i class="fas fa-chart-pie"></i> What the Donut Chart Shows</h6>
+                        <p style="text-shadow: none;">
+                            The <strong>Precinct Distribution by Cluster</strong> donut chart displays how many precincts fall into each of the 7 comprehensive clusters. 
+                            Each cluster represents a distinct "profile" of precincts with similar characteristics.
+                        </p>
+                        
+                        <h6 style="text-shadow: none;"><i class="fas fa-layer-group"></i> What the Clusters Are Based On</h6>
+                        <p style="text-shadow: none;">The clustering combines <strong>three categories of features</strong>:</p>
+                        
+                        <div class="ms-3 mb-3" style="text-shadow: none;">
+                            <p style="text-shadow: none;"><strong>1. Spatial Features</strong> (geographic characteristics):</p>
+                            <ul style="text-shadow: none;">
+                                <li style="text-shadow: none;">Area in km²</li>
+                                <li style="text-shadow: none;">Shape complexity</li>
+                                <li style="text-shadow: none;">Longitude/latitude coordinates</li>
+                            </ul>
+                            
+                            <p style="text-shadow: none;"><strong>2. Political Features</strong> (voting patterns):</p>
+                            <ul style="text-shadow: none;">
+                                <li style="text-shadow: none;">Democratic vote percentage</li>
+                                <li style="text-shadow: none;">Republican vote percentage</li>
+                                <li style="text-shadow: none;">Total votes across contests</li>
+                            </ul>
+                            
+                            <p style="text-shadow: none;"><strong>3. Flippability Features</strong> (strategic opportunity):</p>
+                            <ul style="text-shadow: none;">
+                                <li style="text-shadow: none;">Competitiveness score</li>
+                                <li style="text-shadow: none;">Flippability score (how winnable)</li>
+                                <li style="text-shadow: none;">DVA percentage needed (votes needed to win)</li>
+                            </ul>
+                        </div>
+                        
+                        <h6 style="text-shadow: none;"><i class="fas fa-lightbulb"></i> Understanding the Clusters</h6>
+                        <p style="text-shadow: none;">
+                            Each cluster represents precincts with similar multi-dimensional profiles. For example:
+                        </p>
+                        <ul style="text-shadow: none;">
+                            <li style="text-shadow: none;">One cluster might be "small, highly competitive suburban precincts"</li>
+                            <li style="text-shadow: none;">Another might be "large, strongly Democratic urban precincts"</li>
+                            <li style="text-shadow: none;">Yet another could be "rural precincts with few flippable opportunities"</li>
+                        </ul>
+                        
+                        <h6 style="text-shadow: none;"><i class="fas fa-bullseye"></i> Strategic Application</h6>
+                        <p style="text-shadow: none;">
+                            Use these clusters to:
+                        </p>
+                        <ul style="text-shadow: none;">
+                            <li style="text-shadow: none;">Identify similar precincts that might benefit from the same campaign strategies</li>
+                            <li style="text-shadow: none;">Allocate resources efficiently by focusing on high-opportunity clusters</li>
+                            <li style="text-shadow: none;">Learn from successful tactics in one precinct and apply them to others in the same cluster</li>
+                            <li style="text-shadow: none;">Understand your precinct's strategic context within the larger electoral landscape</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="text-shadow: none;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
