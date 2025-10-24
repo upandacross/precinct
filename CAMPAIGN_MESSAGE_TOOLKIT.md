@@ -1,6 +1,38 @@
 # Campaign Message Testing Toolkit
 
+## Possible Topics for Application Development
+
+### Deep Canvasing
+
+using A/B with control for impact analysis
+- generate A/B motivation messages
+- sample canvassing targets for A and B messaging
+- formulate an 'ask', e.g. 'can we send you more information on this topic?'
+- count acceptance of 'ask' from A, B, and no motivating message
+- verify A and B have significant increase in positve response to 'ask'
+- show varying impact of A vs B
+
 A comprehensive suite of tools for generating, testing, and analyzing campaign messages with A/B testing capabilities.
+
+### Campaign Impact
+
+Using A/B to candidate campaign
+- similarity with A/B with control for impact analysis
+- pitch to candidate for support
+- pitch to encumbant as part of endorsement strategy (win-win)
+- GOTV application
+
+### Affiliated Organization Impact
+
+- Fred Lewis
+- Neighborhood Organizations
+- Policy advocates
+- PAC's
+
+look for organization with interest in election outcomes
+
+- Fred Lewis
+- N
 
 ## Tools Overview
 

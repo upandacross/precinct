@@ -1897,7 +1897,10 @@ window.addEventListener('message', function(event) {
 def main():
     """Run the Flask application."""
     app = create_app()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Get debug setting from config, not hardcoded
+    debug_mode = app.config.get('DEBUG', False)
+    port = app.config.get('FLASK_PORT', 5000)
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
 
 if __name__ == "__main__":
     main()

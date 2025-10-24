@@ -878,3 +878,55 @@ for precinct in precincts:
 - **Documentation Accuracy**: Future analysis based on correct baseline data availability
 
 **Key Lesson**: Existing data infrastructure was robust; issue was outdated documentation not reflecting normalization improvements.
+
+---
+
+## 📝 **Documentation Best Practice: Removing Duplicative Content**
+
+**Date:** October 24, 2025  
+**Context:** Campaign Messaging System documentation consolidation  
+**Action:** Merged CAMPAIGN_MESSAGE_TOOLKIT.md into MESSAGING_SYSTEM_PROGRESS.md
+
+### **Duplication Identified:**
+Multiple sections appeared in 2-3 different locations within documentation:
+- **Tool Descriptions**: Same tools described in Phase sections, Tools Reference Guide, and Current System Capabilities
+- **JSON Export Structure**: Appeared in both Output Formats and Data Structures sections
+- **Usage Examples**: Scattered across multiple sections with overlap
+
+### **Consolidation Approach:**
+1. **Keep Most Detailed Version**: Retained comprehensive "Tools Reference Guide" with full examples
+2. **Remove Redundant Sections**: Eliminated "Current System Capabilities" (duplicated Tools Reference)
+3. **Merge Related Content**: Combined duplicate JSON structures into single authoritative section
+4. **Preserve Context**: Maintained development history (Phases) while removing redundant details
+
+### **Results:**
+- **Before**: 670 lines with significant duplication
+- **After**: 597 lines (73 lines removed, 10.9% reduction)
+- **Outcome**: Leaner, more focused documentation without information loss
+- **Structure**: Clear separation between historical context (Phases) and reference material (Tools Guide)
+
+### **General Guideline for Progress Documents:**
+
+#### ✅ **DO:**
+- Keep development timeline/phases for historical context
+- Maintain ONE comprehensive reference section per topic
+- Include detailed usage examples in reference sections
+- Separate "how we built it" from "how to use it"
+- Consolidate duplicate JSON schemas, data structures, examples
+
+#### ❌ **DON'T:**
+- Repeat full tool descriptions multiple times
+- Duplicate code examples across sections
+- Create multiple "Current Capabilities" type sections
+- Mix development history with user documentation excessively
+
+#### **Document Structure Template:**
+1. **Development Timeline** - Phases with key achievements (brief)
+2. **Reference Guide** - Comprehensive tool documentation with examples
+3. **Workflow Examples** - End-to-end usage scenarios
+4. **Technical Details** - Architecture, requirements, integration
+5. **Metrics & Status** - Success indicators and future plans
+
+**Key Principle**: Each piece of information should appear in ONE authoritative location, with other sections providing context or cross-references rather than duplication.
+
+---
