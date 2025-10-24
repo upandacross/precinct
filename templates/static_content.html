@@ -103,11 +103,6 @@
                     <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
                         <i class="fas fa-home"></i> Dashboard
                     </a>
-                    {% if not current_user.is_admin %}
-                        <a href="{{ url_for('analysis') }}" class="btn btn-outline-info">
-                            <i class="fas fa-chart-line"></i> Precinct Analytics
-                        </a>
-                    {% endif %}
                     <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-user"></i> Profile
                     </a>
