@@ -133,7 +133,7 @@
                             </table>
                         </div>
                     </div>
-                    {% if user.notes %}
+                    {% if user.notes and current_user.is_admin %}
                     <div class="row mt-4">
                         <div class="col-12">
                             <h6><strong>Notes:</strong></h6>
