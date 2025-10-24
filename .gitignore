@@ -22,6 +22,10 @@ MESSAGING_SYSTEM_PROGRESS.md
 *PRIVATE*.md
 *SENSITIVE*.md
 
+# Secure documentation directory (contains sensitive deployment info, credentials, etc.)
+.secure_docs/
+*.gpg
+
 # Maintenance mode flag
 instance/MAINTENANCE_MODE
 
