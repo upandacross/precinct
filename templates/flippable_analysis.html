@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Flippable Races Analysis - Precinct Member's Application{% endblock %}
+{% block title %}Past Race Analysis - Precinct Member's Application{% endblock %}
 
 {% block content %}
 <!-- Overall Assessment Summary -->
@@ -9,36 +9,37 @@
             <div class="card border-primary">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-chart-pie"></i> County Summary
+                        <i class="fas fa-chart-pie"></i> County Summary - Historical Race Analysis
                     </h5>
+                    <p class="mb-0 mt-2"><small><i class="fas fa-info-circle"></i> Analyzing past races (2020-2024) to identify patterns. Future enhancement will correlate with current ballot races.</small></p>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
                         <div class="col-6 col-md-3 mb-2">
                             <div class="bg-success text-white rounded p-3">
                                 <h3 class="mb-1">{{ total_assessment_counts['🎯 SLAM DUNK'] }}</h3>
-                                <strong>🎯 SLAM DUNK RACES</strong><br>
+                                <strong>🎯 SLAM DUNK (PAST)</strong><br>
                                 <small>Weekend volunteer effort</small>
                             </div>
                         </div>
                         <div class="col-6 col-md-3 mb-2">
                             <div class="bg-info text-white rounded p-3">
                                 <h3 class="mb-1">{{ total_assessment_counts['✅ HIGHLY FLIPPABLE'] }}</h3>
-                                <strong>✅ HIGHLY FLIPPABLE</strong><br>
+                                <strong>✅ HIGHLY FLIPPABLE (PAST)</strong><br>
                                 <small>Month-long focused campaign</small>
                             </div>
                         </div>
                         <div class="col-6 col-md-3 mb-2">
                             <div class="bg-warning text-white rounded p-3">
                                 <h3 class="mb-1">{{ total_assessment_counts['🟡 COMPETITIVE'] }}</h3>
-                                <strong>🟡 COMPETITIVE RACES</strong><br>
+                                <strong>🟡 COMPETITIVE (PAST)</strong><br>
                                 <small>Season-long strategic effort</small>
                             </div>
                         </div>
                         <div class="col-6 col-md-3 mb-2">
                             <div class="bg-danger text-white rounded p-3">
                                 <h3 class="mb-1">{{ total_assessment_counts['🔴 STRETCH GOAL'] }}</h3>
-                                <strong>🔴 STRETCH GOALS</strong><br>
+                                <strong>🔴 STRETCH GOAL (PAST)</strong><br>
                                 <small>Multi-cycle investment</small>
                             </div>
                         </div>
@@ -56,9 +57,9 @@
             <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0">
-                        <i class="fas fa-table"></i> Precinct Flippability Summary Analysis
+                        <i class="fas fa-table"></i> Precinct Historical Race Analysis Summary
                     </h4>
-                    <small class="text-muted">Assessment totals by precinct - Click any row to view detailed flippable races for that precinct</small>
+                    <small class="text-muted">Past race assessments by precinct (2020-2024) - Click any row to view detailed races for that precinct</small>
                 </div>
                 <div class="card-body p-0">
                     {% if precinct_summaries %}

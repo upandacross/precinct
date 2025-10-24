@@ -816,7 +816,7 @@ def create_app():
     @app.route('/flippable', methods=['GET', 'POST'])
     @login_required
     def flippable_races():
-        """Flippable Races Analysis with Assessment Categories."""
+        """Historical Race Analysis - Shows past races (2020-2024) by precinct with DVA assessment."""
         try:
             # Handle analysis navigation for admin/county users
             analysis_county = None
@@ -932,7 +932,7 @@ def create_app():
     @app.route('/flippable-analysis')
     @login_required
     def flippable_analysis():
-        """Administrative Flippable Races Analysis - County-wide overview for admin and county users."""
+        """Administrative Historical Race Analysis - County-wide overview of past races (2020-2024) for admin and county users."""
         # Restrict access to admin and county users only
         if not (current_user.is_admin or current_user.is_county):
             flash('Access denied. This page is available to administrators and county coordinators only.', 'error')

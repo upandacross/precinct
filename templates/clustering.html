@@ -144,7 +144,7 @@
                             {% else %}
                                 Republican-leaning area ({{ "%.0f"|format(user_insights.dem_race_win_pct) }}% race wins, {{ "%.1f"|format(user_insights.dem_vote_pct) }}% vote share) - 
                                 {% if user_insights.flippability_score > 0 %}
-                                    Challenging but some flippable races available
+                                    Challenging but some historically competitive races
                                 {% else %}
                                     Long-term organizing and persuasion opportunity
                                 {% endif %}
@@ -152,7 +152,7 @@
                             <br>
                             <strong>Data Availability:</strong> 
                             {% if user_insights.has_political_data and user_insights.has_flippable_data %}
-                                Complete data available (Political + Flippable)
+                                Complete data available (Political + Past Race History)
                             {% elif user_insights.has_political_data %}
                                 Political data available
                             {% else %}
@@ -217,7 +217,7 @@
                     </div>
                     <div class="col-md-3 text-center">
                         <h4 class="text-info">{{ cluster_summary.precincts_with_flippable_data }}</h4>
-                        <p class="text-muted mb-1">Flippable Races</p>
+                        <p class="text-muted mb-1">Past Competitive Races</p>
                         <div>
                             <span class="info-icon" 
                                   data-bs-toggle="tooltip" 
@@ -263,7 +263,7 @@
                     </div>
                     <div class="col-md-3 text-center">
                         <h4 class="text-warning">{{ cluster_summary.precincts_with_flippable_data }}</h4>
-                        <p class="text-muted">With Flippable Data</p>
+                        <p class="text-muted">With Past Race Data</p>
                     </div>
                 </div>
                 {% endif %}
@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <ul style="text-shadow: none;">
                             <li style="text-shadow: none;">One cluster might be "small, highly competitive suburban precincts"</li>
                             <li style="text-shadow: none;">Another might be "large, strongly Democratic urban precincts"</li>
-                            <li style="text-shadow: none;">Yet another could be "rural precincts with few flippable opportunities"</li>
+                            <li style="text-shadow: none;">Yet another could be "rural precincts with few historically competitive opportunities"</li>
                         </ul>
                         
                         <h6 style="text-shadow: none;"><i class="fas fa-bullseye"></i> Strategic Application</h6>
