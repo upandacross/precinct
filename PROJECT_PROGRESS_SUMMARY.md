@@ -25,6 +25,26 @@
 - Enable queries like: "Show me 2026 candidates running for offices that were flippable in 2024"
 - Support campaign coordination by connecting historical opportunity to current races
 
+### Cluster Organization Hierarchy
+**Purpose:** Meta-organization structure for managing precinct clusters with leadership roles
+
+**Objective:** Extend the precinct clustering system with an organizational hierarchy to coordinate campaign efforts across similar precincts. This enables:
+
+- **Cluster Leadership Roles**: Assign Coordinator, Vice Coordinator, and Assistant Coordinator for each cluster
+- **Hierarchical Campaign Management**: Enable cluster-level strategy and coordination beyond individual precincts
+- **Resource Coordination**: Facilitate sharing of strategies, volunteers, and resources among similar precincts
+- **Scalable Organization**: Manage large numbers of precincts through cluster-based delegation
+- **Cross-Precinct Learning**: Share successful tactics across precincts with similar characteristics
+- **Reporting Structure**: Clear chain of command for cluster-level campaign activities
+
+**Implementation Notes:**
+- Create `cluster_coordinators` table linking users to cluster IDs with role designation
+- Support multiple coordinators per cluster (Coordinator, Vice Coordinator, Assistant Coordinator)
+- Add cluster-level dashboard showing all precincts in coordinator's assigned cluster
+- Enable cluster-wide messaging and resource sharing
+- Track cluster-level metrics and performance
+- Integrate with existing precinct leader structure (cluster coordinators oversee multiple precinct leaders)
+
 ---
 
 ## 🎯 Executive Summary
