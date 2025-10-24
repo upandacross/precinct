@@ -126,7 +126,7 @@ This document outlines the comprehensive security measures implemented to preven
 
 ## 📊 Monitoring & Alerts
 
-Monitor the `security.log` file for:
+The log file records:
 
 - Failed login attempts
 - Rate limit violations
@@ -134,12 +134,3 @@ Monitor the `security.log` file for:
 - Invalid input attempts
 - Error spikes
 
-Set up alerts for unusual patterns in these security events.
-
-## 🔄 Regular Security Maintenance
-
-1. **Update Dependencies**: Regular package updates
-2. **Security Audits**: Periodic code reviews
-3. **Log Analysis**: Regular security log review
-4. **Penetration Testing**: Annual security assessments
-5. **Backup Verification**: Regular backup and recovery tests

@@ -1,0 +1,155 @@
+{
+  "test_metadata": {
+    "test_id": "b41eae83",
+    "subject": "Get Out The Vote",
+    "created_at": "2025-10-23T23:24:39.682547",
+    "status": "ready",
+    "total_variants": 4
+  },
+  "variants": [
+    {
+      "variant_id": "A",
+      "variant_name": "Baseline",
+      "config": {
+        "tone": "informative",
+        "length": "medium",
+        "format": "general",
+        "audience": "general"
+      },
+      "message": "This message provides important information about Get Out The Vote.\n\nUnderstanding Get Out The Vote is crucial for making informed decisions. Here's what you need to know: Get Out The Vote involves multiple factors that impact our community and requires careful consideration. Recent developments in Get Out The Vote have highlighted several key points that deserve attention. These include both opportunities and challenges that need to be addressed.\n\nFor more information about Get Out The Vote, please don't hesitate to reach out with any questions.\n",
+      "word_count": 85,
+      "char_count": 553,
+      "is_baseline": true,
+      "test_factors": []
+    },
+    {
+      "variant_id": "B",
+      "variant_name": "Test Variant B",
+      "config": {
+        "tone": "formal",
+        "length": "medium",
+        "format": "email",
+        "audience": "general"
+      },
+      "message": "Dear [Recipient],\n\nI am writing to inform you about Get Out The Vote.\n\nThe purpose of this message is to provide you with comprehensive information regarding Get Out The Vote. This matter requires your attention and consideration. We believe that Get Out The Vote represents an important opportunity for positive impact. Your participation and engagement would be greatly valued in this initiative.\n\nPlease do not hesitate to contact us if you require additional information or have any questions regarding this matter.\n\nBest regards,",
+      "word_count": 83,
+      "char_count": 534,
+      "is_baseline": false,
+      "test_factors": [
+        "tone",
+        "format"
+      ]
+    },
+    {
+      "variant_id": "C",
+      "variant_name": "Test Variant C",
+      "config": {
+        "tone": "casual",
+        "length": "medium",
+        "format": "sms",
+        "audience": "general"
+      },
+      "message": "Hey! Just wanted to let you know about Get Out The Vote!\n\nSo here's the deal with Get Out The Vote - it's pretty exciting stuff. I think you'll find it interesting and worth checking out. The whole Get Out The Vote thing has been getting a lot of attention lately, and for good reason. It's definitely something that could make a real difference.\n\nLet me know what you think! Would love to hear your thoughts on this.\n",
+      "word_count": 78,
+      "char_count": 418,
+      "is_baseline": false,
+      "test_factors": [
+        "tone",
+        "format"
+      ]
+    },
+    {
+      "variant_id": "D",
+      "variant_name": "Test Variant D",
+      "config": {
+        "tone": "persuasive",
+        "length": "medium",
+        "format": "social_media",
+        "audience": "general"
+      },
+      "message": "Imagine the impact we could make with Get Out The Vote.\n\nRight now, Get Out The Vote needs champions like you. Your involvement isn't just helpful - it's essential for success. Every day we wait, opportunities slip away. But with your support, Get Out The Vote can achieve remarkable results that benefit everyone involved.\n",
+      "word_count": 54,
+      "char_count": 324,
+      "is_baseline": false,
+      "test_factors": [
+        "tone",
+        "format"
+      ]
+    }
+  ],
+  "tracking_template": {
+    "metrics": {
+      "impressions": 0,
+      "clicks": 0,
+      "responses": 0,
+      "conversions": 0,
+      "click_through_rate": 0.0,
+      "response_rate": 0.0,
+      "conversion_rate": 0.0
+    },
+    "audience_segments": {
+      "total_sent": 0,
+      "demographics": {},
+      "engagement_by_time": {}
+    },
+    "feedback": {
+      "sentiment_scores": [],
+      "user_comments": [],
+      "quality_ratings": []
+    }
+  },
+  "test_plan": {
+    "distribution": "equal",
+    "sample_size_per_variant": 100,
+    "duration_days": 7,
+    "success_metrics": [
+      "click_through_rate",
+      "response_rate"
+    ],
+    "significance_threshold": 0.05
+  },
+  "analysis_framework": {
+    "statistical_tests": [
+      "chi_square",
+      "t_test"
+    ],
+    "confidence_level": 0.95,
+    "minimum_effect_size": 0.02,
+    "power": 0.8
+  },
+  "deployment_code": "\n# A/B Test Deployment Code\n# Test ID: b41eae83\n# Subject: Get Out The Vote\n\nimport random\nfrom datetime import datetime\n\nclass ABTestDeployment:\n    def __init__(self):\n        self.test_id = \"b41eae83\"\n        self.variants = [\"A\", \"B\", \"C\", \"D\"]\n        self.messages = {\n            \"A\": \"\"\"This message provides important information about Get Out The Vote.\n\nUnderstanding Get Out The Vote is crucial for making informed decisions. Here's what you need to know: Get Out The Vote involves multiple factors that impact our community and requires careful consideration. Recent developments in Get Out The Vote have highlighted several key points that deserve attention. These include both opportunities and challenges that need to be addressed.\n\nFor more information about Get Out The Vote, please don't hesitate to reach out with any questions.\n\"\"\",\n            \"B\": \"\"\"Dear [Recipient],\n\nI am writing to inform you about Get Out The Vote.\n\nThe purpose of this message is to provide you with comprehensive information regarding Get Out The Vote. This matter requires your attention and consideration. We believe that Get Out The Vote represents an important opportunity for positive impact. Your participation and engagement would be greatly valued in this initiative.\n\nPlease do not hesitate to contact us if you require additional information or have any questions regarding this matter.\n\nBest regards,\"\"\",\n            \"C\": \"\"\"Hey! Just wanted to let you know about Get Out The Vote!\n\nSo here's the deal with Get Out The Vote - it's pretty exciting stuff. I think you'll find it interesting and worth checking out. The whole Get Out The Vote thing has been getting a lot of attention lately, and for good reason. It's definitely something that could make a real difference.\n\nLet me know what you think! Would love to hear your thoughts on this.\n\"\"\",\n            \"D\": \"\"\"Imagine the impact we could make with Get Out The Vote.\n\nRight now, Get Out The Vote needs champions like you. Your involvement isn't just helpful - it's essential for success. Every day we wait, opportunities slip away. But with your support, Get Out The Vote can achieve remarkable results that benefit everyone involved.\n\"\"\",\n        }\n        self.tracking = {variant: {\"sent\": 0, \"opened\": 0, \"clicked\": 0} for variant in self.variants}\n    \n    def get_variant_for_user(self, user_id: str) -> str:\n        \"\"\"Assign user to variant (deterministic based on user_id).\"\"\"\n        random.seed(hash(user_id))\n        return random.choice(self.variants)\n    \n    def send_message(self, user_id: str, delivery_method: str = \"email\"):\n        \"\"\"Send appropriate variant to user.\"\"\"\n        variant = self.get_variant_for_user(user_id)\n        message = self.messages[variant]\n        \n        # Track sending\n        self.tracking[variant][\"sent\"] += 1\n        \n        # Your delivery logic here\n        print(f\"Sending variant {variant} to {user_id} via {delivery_method}\")\n        print(f\"Message: {message[:100]}...\")\n        \n        return variant\n    \n    def track_engagement(self, user_id: str, action: str):\n        \"\"\"Track user engagement (open, click, etc.).\"\"\"\n        variant = self.get_variant_for_user(user_id)\n        if action in self.tracking[variant]:\n            self.tracking[variant][action] += 1\n        \n        # Log to analytics system\n        print(f\"User {user_id} (variant {variant}) performed: {action}\")\n    \n    def get_results(self):\n        \"\"\"Get current test results.\"\"\"\n        results = {}\n        for variant in self.variants:\n            stats = self.tracking[variant]\n            sent = stats.get(\"sent\", 0)\n            opened = stats.get(\"opened\", 0)\n            clicked = stats.get(\"clicked\", 0)\n            \n            results[variant] = {\n                \"sent\": sent,\n                \"opened\": opened,\n                \"clicked\": clicked,\n                \"open_rate\": opened / sent if sent > 0 else 0,\n                \"click_rate\": clicked / sent if sent > 0 else 0,\n                \"ctr\": clicked / opened if opened > 0 else 0\n            }\n        \n        return results\n\n# Usage example:\n# test = ABTestDeployment()\n# test.send_message(\"user123\", \"email\")\n# test.track_engagement(\"user123\", \"opened\")\n# test.track_engagement(\"user123\", \"clicked\")\n# print(test.get_results())\n",
+  "results": {
+    "A": {
+      "sent": 300,
+      "opened": 120,
+      "clicked": 0,
+      "responded": 0,
+      "converted": 0,
+      "last_updated": "2025-10-23T23:24:52.717723"
+    },
+    "B": {
+      "sent": 300,
+      "opened": 135,
+      "clicked": 0,
+      "responded": 0,
+      "converted": 0,
+      "last_updated": "2025-10-23T23:24:52.786296"
+    },
+    "C": {
+      "sent": 300,
+      "opened": 95,
+      "clicked": 0,
+      "responded": 0,
+      "converted": 0,
+      "last_updated": "2025-10-23T23:24:52.843295"
+    },
+    "D": {
+      "sent": 300,
+      "opened": 160,
+      "clicked": 0,
+      "responded": 0,
+      "converted": 0,
+      "last_updated": "2025-10-23T23:24:52.900495"
+    }
+  }
+}

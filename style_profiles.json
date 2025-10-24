@@ -1,0 +1,22 @@
+{
+  "buttigieg": {
+    "keywords": ["infrastructure", "investments", "communities", "future", "working families", "practical", "common sense", "together", "opportunity", "dignity", "values", "progress"],
+    "sentence_patterns": ["We know that {topic} is essential for {benefit}", "When we invest in {topic}, we're investing in {community}", "This isn't just about {topic} - it's about {values}", "Every community deserves {benefit}", "We can build a future where {vision}"],
+    "tone_markers": {
+      "inclusive": ["we", "our", "together", "all Americans"],
+      "pragmatic": ["practical", "realistic", "achievable", "evidence"],
+      "optimistic": ["opportunity", "progress", "future", "potential"],
+      "policy_focused": ["investment", "infrastructure", "program", "initiative"]
+    },
+    "rhetorical_devices": ["personal_story", "data_point", "future_vision", "contrast_framing"]
+  },
+  "obama": {
+    "keywords": ["change", "hope", "yes we can", "together", "future", "opportunity", "justice", "community", "progress", "values"],
+    "sentence_patterns": ["We are the change we've been waiting for", "When {group} comes together, {outcome}", "This is our moment to {action}", "We choose {positive} over {negative}"],
+    "tone_markers": {
+      "inspirational": ["hope", "dream", "believe", "possible"],
+      "inclusive": ["we", "our", "together", "united"],
+      "aspirational": ["change", "future", "tomorrow", "legacy"]
+    }
+  }
+}
