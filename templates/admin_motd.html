@@ -20,13 +20,13 @@
                 <form method="POST">
                     <div class="mb-3">
                         <label for="motd_content" class="form-label">
-                            <i class="fas fa-message"></i> Message Content
+                            <i class="fas fa-message"></i> Message Content (Markdown Format)
                         </label>
-                        <textarea class="form-control" id="motd_content" name="motd_content" rows="8" 
-                                  placeholder="Enter the message of the day... Leave empty to hide the message from users.">{{ current_motd }}</textarea>
+                        <textarea class="form-control font-monospace" id="motd_content" name="motd_content" rows="12" 
+                                  placeholder="Enter the message of the day using Markdown formatting... Leave empty to hide the message from users.">{{ current_motd }}</textarea>
                         <div class="form-text">
                             <i class="fas fa-info-circle"></i> 
-                            Use line breaks to format your message. HTML is not supported for security reasons.
+                            <strong>Markdown formatting supported:</strong> **bold**, *italic*, # Headings, - Lists, [links](url), etc.
                             Leave empty to hide the message from all users.
                         </div>
                     </div>
@@ -53,7 +53,7 @@
                 <div class="alert alert-info" role="alert">
                     <h6><i class="fas fa-bullhorn"></i> Message of the Day</h6>
                     <div class="motd-content">
-                        {{ current_motd|replace('\n', '<br>')|safe }}
+                        {{ get_motd()|safe }}
                     </div>
                 </div>
                 {% else %}
@@ -67,16 +67,31 @@
 
         <div class="card mt-3">
             <div class="card-header">
-                <h5><i class="fas fa-tips"></i> Tips</h5>
+                <h5><i class="fas fa-markdown"></i> Markdown Quick Reference</h5>
             </div>
-            <div class="card-body">
-                <ul class="list-unstyled">
-                    <li><i class="fas fa-check text-success"></i> Keep messages concise and informative</li>
-                    <li><i class="fas fa-check text-success"></i> Use line breaks for better readability</li>
-                    <li><i class="fas fa-check text-success"></i> Include dates for time-sensitive information</li>
-                    <li><i class="fas fa-check text-success"></i> Messages appear on the dashboard after login</li>
-                    <li><i class="fas fa-check text-success"></i> Users can dismiss the message</li>
-                </ul>
+            <div class="card-body small">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">**bold text**</dt>
+                    <dd class="col-sm-7"><strong>bold text</strong></dd>
+                    
+                    <dt class="col-sm-5">*italic text*</dt>
+                    <dd class="col-sm-7"><em>italic text</em></dd>
+                    
+                    <dt class="col-sm-5"># Heading</dt>
+                    <dd class="col-sm-7">Large heading</dd>
+                    
+                    <dt class="col-sm-5">## Sub-heading</dt>
+                    <dd class="col-sm-7">Smaller heading</dd>
+                    
+                    <dt class="col-sm-5">- List item</dt>
+                    <dd class="col-sm-7">Bullet list</dd>
+                    
+                    <dt class="col-sm-5">1. Numbered</dt>
+                    <dd class="col-sm-7">Numbered list</dd>
+                    
+                    <dt class="col-sm-5">[Link](url)</dt>
+                    <dd class="col-sm-7">Clickable link</dd>
+                </dl>
             </div>
         </div>
     </div>

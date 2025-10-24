@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 from config import get_config
 from security import add_security_headers
 from precinct_utils import normalize_precinct_id, normalize_precinct_join, create_precinct_lookup
+import markdown
 try:
     from dash_analytics import create_dash_app
     DASH_AVAILABLE = True
@@ -321,13 +322,19 @@ def create_app():
     
     # Message of the Day helper function
     def get_motd():
-        """Read and return the message of the day from motd.txt file."""
+        """Read and return the message of the day from motd.md file, rendered as HTML."""
         try:
-            motd_path = os.path.join(app.root_path, 'motd.txt')
+            motd_path = os.path.join(app.root_path, 'motd.md')
             if os.path.exists(motd_path):
                 with open(motd_path, 'r', encoding='utf-8') as f:
                     content = f.read().strip()
-                    return content if content else None
+                    if content:
+                        # Convert Markdown to HTML
+                        html_content = markdown.markdown(
+                            content,
+                            extensions=['extra', 'nl2br', 'sane_lists']
+                        )
+                        return html_content
             return None
         except Exception as e:
             app.logger.warning(f'Error reading MOTD file: {str(e)}')
@@ -1463,12 +1470,12 @@ def create_app():
     @app.route('/admin/motd', methods=['GET', 'POST'])
     @login_required
     def admin_motd():
-        """Admin page to edit message of the day."""
+        """Admin page to edit message of the day (Markdown format)."""
         if not current_user.is_admin:
             flash('Access denied. Administrator access required.', 'error')
             return redirect(url_for('index'))
         
-        motd_path = os.path.join(app.root_path, 'motd.txt')
+        motd_path = os.path.join(app.root_path, 'motd.md')
         
         if request.method == 'POST':
             motd_content = request.form.get('motd_content', '').strip()
@@ -1481,7 +1488,16 @@ def create_app():
             return redirect(url_for('admin_motd'))
         
         # GET request - display the form
-        current_motd = get_motd() or ''
+        # Read raw markdown content for editing
+        try:
+            if os.path.exists(motd_path):
+                with open(motd_path, 'r', encoding='utf-8') as f:
+                    current_motd = f.read().strip()
+            else:
+                current_motd = ''
+        except:
+            current_motd = ''
+        
         return render_template('admin_motd.html', current_motd=current_motd)
     
     @app.route('/static-content')
