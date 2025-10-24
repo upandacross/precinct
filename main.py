@@ -558,6 +558,27 @@ def create_app():
     def inject_motd():
         return dict(get_motd=get_motd)
     
+    # Maintenance mode check
+    @app.before_request
+    def check_maintenance_mode():
+        """Check if maintenance mode is enabled."""
+        # Skip maintenance check for static files
+        if request.path.startswith('/static/'):
+            return None
+        
+        # Check for maintenance mode flag file
+        maintenance_file = os.path.join(app.instance_path, 'MAINTENANCE_MODE')
+        if os.path.exists(maintenance_file):
+            # Allow access to the maintenance page itself
+            if request.endpoint == 'maintenance':
+                return None
+            # Show maintenance page for all other requests
+            return render_template('maintenance.html'), 503
+        
+        # If trying to access maintenance page when not in maintenance mode, redirect to index
+        if request.endpoint == 'maintenance':
+            return redirect(url_for('index'))
+    
     # Block suspicious user agents and rapid requests
     @app.before_request
     def block_suspicious_requests():
@@ -774,6 +795,11 @@ def create_app():
     def about():
         """About page."""
         return render_template('about.html')
+    
+    @app.route('/maintenance')
+    def maintenance():
+        """Maintenance mode page - handled by before_request check."""
+        return render_template('maintenance.html'), 503
     
     @app.route('/analysis')
     @login_required
