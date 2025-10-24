@@ -719,7 +719,9 @@ def create_app():
     @login_required
     def index():
         """Dashboard page - requires login."""
-        return render_template('dashboard.html', user=current_user)
+        # Check if we should show MOTD (only after login)
+        show_motd = session.pop('show_motd', False)
+        return render_template('dashboard.html', user=current_user, show_motd=show_motd)
     
     @app.route('/login', methods=['GET', 'POST'])
     @limiter.limit("10 per minute")  # Protect against brute force attacks
@@ -742,6 +744,9 @@ def create_app():
                 # Initialize session timeout tracking
                 session['last_activity'] = datetime.utcnow().isoformat()
                 session.permanent = True
+                
+                # Set flag to show MOTD after login
+                session['show_motd'] = True
                 
                 # Redirect to next page or dashboard
                 next_page = request.args.get('next')

@@ -10,7 +10,8 @@
         </div>
     </div>
 
-    <!-- Message of the Day -->
+    <!-- Message of the Day (only shown after login) -->
+    {% if show_motd %}
     {% set motd_content = get_motd() %}
     {% if motd_content %}
     <div class="row mt-3">
@@ -24,6 +25,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
     {% endif %}
 
     <div class="row mt-4">
