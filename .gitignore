@@ -12,6 +12,17 @@ uv.lock
 *.zip
 *.txt
 *voter_reg*
+*.dump
 .env
+
+# Sensitive Documentation - DO NOT COMMIT THESE IF THEY EXIST
+PROJECT_PROGRESS_SUMMARY.md
+DIGITAL_OCEAN_DEPLOYMENT_PLAN.md
+MESSAGING_SYSTEM_PROGRESS.md
+*PRIVATE*.md
+*SENSITIVE*.md
+
+# Maintenance mode flag
+instance/MAINTENANCE_MODE
 
 # Virtual environments
