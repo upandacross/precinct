@@ -46,22 +46,24 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5><i class="fas fa-eye"></i> Current Message Preview</h5>
+                <h5><i class="fas fa-eye"></i> Live Preview</h5>
             </div>
             <div class="card-body">
-                {% if current_motd %}
-                <div class="alert alert-info" role="alert">
-                    <h6><i class="fas fa-bullhorn"></i> Message of the Day</h6>
-                    <div class="motd-content">
-                        {{ get_motd()|safe }}
+                <div id="preview-container">
+                    {% if current_motd %}
+                    <div class="alert alert-info" role="alert">
+                        <h6><i class="fas fa-bullhorn"></i> Message of the Day</h6>
+                        <div class="motd-content" id="motd-preview">
+                            {{ get_motd()|safe }}
+                        </div>
                     </div>
+                    {% else %}
+                    <div class="alert alert-secondary" role="alert" id="motd-preview">
+                        <i class="fas fa-info-circle"></i> <strong>No message set</strong><br>
+                        Users will not see any message of the day.
+                    </div>
+                    {% endif %}
                 </div>
-                {% else %}
-                <div class="alert alert-secondary" role="alert">
-                    <i class="fas fa-info-circle"></i> <strong>No message set</strong><br>
-                    Users will not see any message of the day.
-                </div>
-                {% endif %}
             </div>
         </div>
 
@@ -105,4 +107,53 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    // Configure marked options
+    marked.setOptions({
+        breaks: true,
+        gfm: true,
+        headerIds: false,
+        mangle: false
+    });
+
+    // Live preview update function
+    function updatePreview() {
+        const textarea = document.getElementById('motd_content');
+        const previewContainer = document.getElementById('preview-container');
+        const content = textarea.value.trim();
+        
+        if (content) {
+            // Render markdown to HTML
+            const renderedHTML = marked.parse(content);
+            previewContainer.innerHTML = `
+                <div class="alert alert-info" role="alert">
+                    <h6><i class="fas fa-bullhorn"></i> Message of the Day</h6>
+                    <div class="motd-content">
+                        ${renderedHTML}
+                    </div>
+                </div>
+            `;
+        } else {
+            // Show empty state
+            previewContainer.innerHTML = `
+                <div class="alert alert-secondary" role="alert">
+                    <i class="fas fa-info-circle"></i> <strong>No message set</strong><br>
+                    Users will not see any message of the day.
+                </div>
+            `;
+        }
+    }
+    
+    // Update preview on input (with debounce for performance)
+    let debounceTimer;
+    document.getElementById('motd_content').addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(updatePreview, 300);
+    });
+    
+    // Initial preview render
+    document.addEventListener('DOMContentLoaded', updatePreview);
+</script>
 {% endblock %}
