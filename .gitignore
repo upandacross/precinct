@@ -22,6 +22,10 @@ MESSAGING_SYSTEM_PROGRESS.md
 *PRIVATE*.md
 *SENSITIVE*.md
 
+# Candidate recruitment reports (contain confidential strategic data)
+candidate_reports/*.md
+!candidate_reports/README.md
+
 # Secure documentation directory (contains sensitive deployment info, credentials, etc.)
 .secure_docs/
 *.gpg
