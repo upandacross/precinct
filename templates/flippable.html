@@ -263,13 +263,13 @@
 <div class="modal fade" id="strategyModal" tabindex="-1" aria-labelledby="strategyModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header" style="text-shadow: none;">
-                <h5 class="modal-title text-dark" id="strategyModalLabel" style="text-shadow: none;">
+            <div class="modal-header">
+                <h5 class="modal-title text-dark" id="strategyModalLabel">
                     <i class="fas fa-map-marked-alt"></i> Ballot Matching Strategy
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body text-dark" id="strategyContent" style="text-shadow: none; max-height: 70vh; overflow-y: auto;">
+            <div class="modal-body text-dark" id="strategyContent" style="max-height: 70vh; overflow-y: auto;">
                 {{ strategy_content|safe }}
             </div>
             <div class="modal-footer">
