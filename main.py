@@ -992,12 +992,30 @@ def create_app():
                     'best_pathway': best_pathway
                 })
             
+            # Load ballot matching strategy content based on user role
+            if current_user.is_authenticated and (current_user.is_admin or current_user.is_county):
+                strategy_filename = '_BALLOT_MATCHING_STRATEGY.md'
+            else:
+                strategy_filename = '_BALLOT_MATCHING_STRATEGY_PUBLIC.md'
+            
+            strategy_content_html = ''
+            try:
+                strategy_filepath = os.path.join('doc', strategy_filename)
+                if os.path.exists(strategy_filepath):
+                    with open(strategy_filepath, 'r', encoding='utf-8') as f:
+                        strategy_content = f.read()
+                    strategy_content_html = markdown.markdown(strategy_content, extensions=['extra', 'codehilite'])
+            except Exception as e:
+                app.logger.error(f'Error loading strategy content for flippable: {str(e)}')
+                strategy_content_html = '<div class="alert alert-danger">Error loading strategy content.</div>'
+            
             return render_template('flippable.html', 
                                  races=processed_races,
                                  assessment_counts=assessment_counts,
                                  show_back_to_analysis=from_analysis,
                                  target_county=target_county,
                                  target_precinct=target_precinct,
+                                 strategy_content=strategy_content_html,
                                  user=current_user)
             
         except Exception as e:
@@ -1166,11 +1184,29 @@ def create_app():
                     # Leave non-numeric precincts as-is
                     pass
             
+            # Load ballot matching strategy content based on user role
+            if current_user.is_authenticated and (current_user.is_admin or current_user.is_county):
+                strategy_filename = '_BALLOT_MATCHING_STRATEGY.md'
+            else:
+                strategy_filename = '_BALLOT_MATCHING_STRATEGY_PUBLIC.md'
+            
+            strategy_content_html = ''
+            try:
+                strategy_filepath = os.path.join('doc', strategy_filename)
+                if os.path.exists(strategy_filepath):
+                    with open(strategy_filepath, 'r', encoding='utf-8') as f:
+                        strategy_content = f.read()
+                    strategy_content_html = markdown.markdown(strategy_content, extensions=['extra', 'codehilite'])
+            except Exception as e:
+                app.logger.error(f'Error loading strategy content for flippable_analysis: {str(e)}')
+                strategy_content_html = '<div class="alert alert-danger">Error loading strategy content.</div>'
+            
             return render_template('flippable_analysis.html', 
                                  county_summaries=county_summaries,
                                  precinct_summaries=sorted_precincts,
                                  total_assessment_counts=total_assessment_counts,
                                  scope_description=scope_description,
+                                 strategy_content=strategy_content_html,
                                  user=current_user)
                                  
         except Exception as e:

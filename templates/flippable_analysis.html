@@ -164,12 +164,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-dark" id="strategyContent" style="text-shadow: none; max-height: 70vh; overflow-y: auto;">
-                <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading strategy content...</p>
-                </div>
+                {{ strategy_content|safe }}
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -218,32 +213,6 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.backgroundColor = '';
         });
     });
-    
-    // Load ballot matching strategy content when modal is shown
-    const strategyModal = document.getElementById('strategyModal');
-    if (strategyModal) {
-        strategyModal.addEventListener('show.bs.modal', function (e) {
-            const contentDiv = document.getElementById('strategyContent');
-            // Only load once
-            if (!contentDiv.dataset.loaded) {
-                fetch('{{ url_for("ballot_matching_strategy_content") }}')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('HTTP error ' + response.status);
-                        }
-                        return response.text();
-                    })
-                    .then(html => {
-                        contentDiv.innerHTML = html;
-                        contentDiv.dataset.loaded = 'true';
-                    })
-                    .catch(error => {
-                        console.error('Fetch Error:', error);
-                        contentDiv.innerHTML = '<div class="alert alert-danger">Error loading strategy content: ' + error.message + '<br>Please try refreshing the page.</div>';
-                    });
-            }
-        });
-    }
 });
 </script>
 
