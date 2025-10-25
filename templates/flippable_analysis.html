@@ -8,10 +8,19 @@
         <div class="col-12">
             <div class="card border-primary">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-chart-pie"></i> County Summary - Historical Race Analysis
-                    </h5>
-                    <p class="mb-0 mt-2"><small><i class="fas fa-info-circle"></i> Analyzing past races (2020-2024) to identify patterns. Future enhancement will correlate with current ballot races.</small></p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-pie"></i> Historical Race Flippability Analysis
+                            </h5>
+                            <p class="mb-0 mt-2"><small><i class="fas fa-info-circle"></i> Analyzing past races (2020-2024) to identify patterns. Future enhancement will correlate with current ballot races.</small></p>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('ballot_matching_strategy') }}" class="btn fw-bold" style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;">
+                                <i class="fas fa-lightbulb"></i> Flippability and Future Races
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">

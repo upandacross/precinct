@@ -10,14 +10,17 @@
                 <h1><i class="fas fa-exchange-alt"></i> Flippable Races Analysis</h1>
                 <p class="lead">Strategic analysis of winnable Democratic opportunities</p>
             </div>
-            <div class="btn-group">
+            <div class="btn-group gap-2">
+                <a href="{{ url_for('ballot_matching_strategy') }}" class="btn fw-bold" style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;">
+                    <i class="fas fa-lightbulb"></i> Flippability and Future Races
+                </a>
                 {% if show_back_to_analysis %}
                     <a href="{{ url_for('flippable_analysis') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left"></i> Back to Analysis
                     </a>
                 {% endif %}
-                <button type="button" class="btn fw-bold" data-bs-toggle="modal" data-bs-target="#explanationModal" style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;">
-                    <i class="fas fa-question-circle"></i> Explanation
+                <button type="button" class="btn fw-bold" data-bs-toggle="modal" data-bs-target="#explanationModal" style="background-color: #0d6efd !important; border-color: #0d6efd !important; color: white !important;">
+                    <i class="fas fa-question-circle"></i> Page Explanation
                 </button>
             </div>
         </div>

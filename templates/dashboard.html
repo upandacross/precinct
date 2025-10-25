@@ -86,11 +86,11 @@
                         
                         {% if user.is_admin %}
                             <a href="{{ url_for('flippable_analysis') }}" class="btn btn-outline-danger">
-                                <i class="fas fa-chart-bar"></i> Past Race Analysis
+                                <i class="fas fa-chart-bar"></i> Past Flippable Races
                             </a>
                         {% elif user.is_county %}
                             <a href="{{ url_for('flippable_analysis') }}" class="btn btn-outline-danger">
-                                <i class="fas fa-chart-bar"></i> Past Race Analysis
+                                <i class="fas fa-chart-bar"></i> Past Flippable Races
                             </a>
                         {% else %}
                             <a href="{{ url_for('flippable_races') }}" class="btn btn-outline-warning">

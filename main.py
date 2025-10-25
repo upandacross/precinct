@@ -721,6 +721,43 @@ def create_app():
             app.logger.error(f'Error reading documentation file {filename}: {str(e)}')
             abort(500)
     
+    @app.route('/ballot-matching-strategy')
+    @login_required
+    def ballot_matching_strategy():
+        """Display ballot matching strategy document - version based on user role."""
+        try:
+            # Determine which version to show based on user role
+            if current_user.is_admin or current_user.is_county:
+                # Full version with examples for admin and county users
+                filename = '_BALLOT_MATCHING_STRATEGY.md'
+            else:
+                # Simplified version without examples for regular users
+                filename = '_BALLOT_MATCHING_STRATEGY_PUBLIC.md'
+            
+            filepath = os.path.join('doc', filename)
+            
+            if not os.path.exists(filepath):
+                abort(404)
+            
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Get file info
+            stat_info = os.stat(filepath)
+            last_modified = datetime.fromtimestamp(stat_info.st_mtime)
+            
+            return render_template('show_documentation.html', 
+                                 content=content, 
+                                 filename='Ballot Matching Strategy',
+                                 display_name='Ballot Matching Strategy: Flippability and Future Races',
+                                 last_modified=last_modified,
+                                 is_markdown=True)
+        
+        except Exception as e:
+            app.logger.error(f'Error reading ballot matching strategy: {str(e)}')
+            flash('Error loading ballot matching strategy document.', 'error')
+            return redirect(url_for('index'))
+    
     # Flask-Admin setup
     admin = Admin(
         app, 

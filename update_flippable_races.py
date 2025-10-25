@@ -53,7 +53,9 @@ class FlippableUpdater:
                 SUM(CASE WHEN choice_party = 'REP' THEN total_votes ELSE 0 END) as rep_votes,
                 SUM(CASE WHEN choice_party NOT IN ('DEM', 'REP') THEN total_votes ELSE 0 END) as other_votes,
                 SUM(total_votes) as total_votes,
-                COUNT(DISTINCT choice_party) as parties
+                COUNT(DISTINCT choice_party) as parties,
+                MAX(CASE WHEN choice_party = 'DEM' THEN candidate_name END) as dem_candidate,
+                MAX(CASE WHEN choice_party = 'REP' THEN candidate_name END) as rep_candidate
             FROM candidate_vote_results 
             WHERE choice_party IN ('DEM', 'REP')
             GROUP BY county, precinct, contest_name, election_date
@@ -86,7 +88,8 @@ class FlippableUpdater:
         SELECT 
             county, precinct, contest_name, election_date,
             dem_votes, rep_votes, (dem_votes + rep_votes + other_votes) as gov_votes,
-            total_votes, vote_diff, rep_margin_pct, dva_pct_needed
+            total_votes, vote_diff, rep_margin_pct, dva_pct_needed,
+            dem_candidate, rep_candidate
         FROM new_flippable 
         ORDER BY rep_margin_pct ASC
         '''
@@ -100,7 +103,8 @@ class FlippableUpdater:
             new_races = pd.DataFrame(result.fetchall(), columns=[
                 'county', 'precinct', 'contest_name', 'election_date',
                 'dem_votes', 'rep_votes', 'gov_votes', 'total_votes', 
-                'vote_diff', 'rep_margin_pct', 'dva_pct_needed'
+                'vote_diff', 'rep_margin_pct', 'dva_pct_needed',
+                'dem_candidate', 'rep_candidate'
             ])
             
             # Convert numeric columns to proper types
@@ -161,7 +165,9 @@ class FlippableUpdater:
                 'oppo_votes': int(row['rep_votes']),
                 'gov_votes': int(row['gov_votes']),
                 'dem_margin': int(-row['vote_diff']),  # Negative because Dems are losing
-                'dva_pct_needed': float(row['dva_pct_needed'])
+                'dva_pct_needed': float(row['dva_pct_needed']),
+                'dem_candidate': row['dem_candidate'],
+                'rep_candidate': row['rep_candidate']
             })
         
         # Insert data
@@ -169,11 +175,11 @@ class FlippableUpdater:
         INSERT INTO flippable (
             county, election_date, precinct, contest_name, vote_for,
             source_file, imported_at, dem_votes, oppo_votes, gov_votes,
-            dem_margin, dva_pct_needed
+            dem_margin, dva_pct_needed, dem_candidate, rep_candidate
         ) VALUES (
             :county, :election_date, :precinct, :contest_name, :vote_for,
             :source_file, :imported_at, :dem_votes, :oppo_votes, :gov_votes,
-            :dem_margin, :dva_pct_needed
+            :dem_margin, :dva_pct_needed, :dem_candidate, :rep_candidate
         )
         '''
         

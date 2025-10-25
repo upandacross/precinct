@@ -230,3 +230,96 @@ class Map(db.Model):
         return f'{self.state} {self.county} Precinct {self.precinct}'
 
 
+class UpcomingElection(db.Model):
+    """Model for tracking upcoming elections including municipal, primary, and general elections."""
+    
+    __tablename__ = 'upcoming_elections'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    election_name = db.Column(db.String(200), nullable=False)
+    election_type = db.Column(db.String(50), nullable=False)  # municipal, primary, general, special
+    election_date = db.Column(db.Date, nullable=False, index=True)
+    early_voting_start = db.Column(db.Date, nullable=True)
+    early_voting_end = db.Column(db.Date, nullable=True)
+    absentee_request_deadline = db.Column(db.Date, nullable=True)
+    absentee_return_deadline = db.Column(db.Date, nullable=True)
+    voter_registration_deadline = db.Column(db.Date, nullable=True)
+    county = db.Column(db.String(100), nullable=True, index=True)  # NULL = statewide
+    municipality = db.Column(db.String(100), nullable=True)  # For municipal elections
+    state = db.Column(db.String(50), nullable=False, default='NC')
+    description = db.Column(db.Text, nullable=True)
+    contests = db.Column(db.Text, nullable=True)  # JSON or comma-separated list of races
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __init__(self, election_name, election_type, election_date, 
+                 early_voting_start=None, early_voting_end=None,
+                 absentee_request_deadline=None, absentee_return_deadline=None,
+                 voter_registration_deadline=None, county=None, municipality=None,
+                 state='NC', description=None, contests=None, is_active=True):
+        self.election_name = election_name
+        self.election_type = election_type
+        self.election_date = election_date
+        self.early_voting_start = early_voting_start
+        self.early_voting_end = early_voting_end
+        self.absentee_request_deadline = absentee_request_deadline
+        self.absentee_return_deadline = absentee_return_deadline
+        self.voter_registration_deadline = voter_registration_deadline
+        self.county = county
+        self.municipality = municipality
+        self.state = state
+        self.description = description
+        self.contests = contests
+        self.is_active = is_active
+    
+    @staticmethod
+    def get_upcoming_elections(county=None, limit=10):
+        """Get upcoming elections, optionally filtered by county."""
+        from datetime import date
+        query = UpcomingElection.query.filter(
+            UpcomingElection.election_date >= date.today(),
+            UpcomingElection.is_active == True
+        )
+        
+        if county:
+            # Get both county-specific and statewide elections
+            query = query.filter(
+                db.or_(
+                    UpcomingElection.county == county,
+                    UpcomingElection.county == None
+                )
+            )
+        
+        return query.order_by(UpcomingElection.election_date).limit(limit).all()
+    
+    @staticmethod
+    def get_next_election(county=None):
+        """Get the next upcoming election."""
+        elections = UpcomingElection.get_upcoming_elections(county=county, limit=1)
+        return elections[0] if elections else None
+    
+    def days_until_election(self):
+        """Calculate days remaining until this election."""
+        from datetime import date
+        if self.election_date:
+            delta = self.election_date - date.today()
+            return delta.days
+        return None
+    
+    def is_early_voting_active(self):
+        """Check if early voting is currently active."""
+        from datetime import date
+        today = date.today()
+        if self.early_voting_start and self.early_voting_end:
+            return self.early_voting_start <= today <= self.early_voting_end
+        return False
+    
+    def __repr__(self):
+        location = self.municipality or self.county or 'Statewide'
+        return f'<UpcomingElection {self.election_name} - {location} - {self.election_date}>'
+    
+    def __str__(self):
+        return f'{self.election_name} ({self.election_date})'
+
+

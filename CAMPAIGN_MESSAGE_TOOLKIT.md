@@ -251,6 +251,7 @@ campaign_tools/
 - Advanced statistical models
 - Machine learning optimization
 - Multi-channel campaign support
+- **AI-Enhanced Canvassing System** (See `doc/_POLITICAL_CANVASSING_OPTIMIZATION.md`): Intelligent questionnaire design with reinforcement learning to optimize voter turnout prediction. System uses correlation analysis to eliminate redundant questions, reducing canvassing time while improving data quality. Includes dynamic question ordering, real-time feedback loops, and multi-metric optimization (turnout maximization, time efficiency, data completion). Designed for iterative improvement through actual voter behavior validation.
 
 ### API Integration Targets
 - Mailchimp, SendGrid (email)

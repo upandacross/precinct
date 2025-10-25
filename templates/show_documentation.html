@@ -3,18 +3,18 @@
 
 {% block content %}
 <!-- Action Buttons (floating top-right) -->
+{% if current_user.is_authenticated and current_user.is_admin and filename != 'Ballot Matching Strategy' %}
 <div class="position-fixed" style="top: 100px; right: 20px; z-index: 1000;">
     <div class="btn-group-vertical">
-        {% if current_user.is_authenticated and current_user.is_admin %}
-            <a href="/admin/doc_admin/edit/{{ filename }}" class="btn btn-warning btn-sm mb-2" title="Edit Document">
-                <i class="fas fa-edit"></i> Edit
-            </a>
-        {% endif %}
+        <a href="/admin/doc_admin/edit/{{ filename }}" class="btn btn-warning btn-sm mb-2" title="Edit Document">
+            <i class="fas fa-edit"></i> Edit
+        </a>
         <a href="{{ url_for('documentation') }}" class="btn btn-secondary btn-sm" title="All Documents">
             <i class="fas fa-list"></i> All Docs
         </a>
     </div>
 </div>
+{% endif %}
 
 <!-- Full Width Content Section -->
 <div class="container-fluid px-3 mt-3">
