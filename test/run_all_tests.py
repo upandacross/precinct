@@ -87,7 +87,8 @@ def run_test_category(category, args):
         'clustering': 'test_clustering_integration.py',
         'dva_formula': 'test_dva_formula.py',
         'dva_scenarios': 'test_dva_scenarios.py',
-        'dva_criteria': 'test_expanded_criteria.py'
+        'dva_criteria': 'test_expanded_criteria.py',
+        'candidate_automation': 'test_candidate_automation.py'
     }
     
     if category not in test_files:
@@ -132,6 +133,7 @@ def run_all_tests(args):
         ('dva_formula', 'DVA Formula Tests'),
         ('dva_scenarios', 'DVA Scenario Tests'),
         ('dva_criteria', 'DVA Expanded Criteria Tests'),
+        ('candidate_automation', 'Candidate Automation Tests'),
     ]
     
     if args.include_performance:
@@ -233,7 +235,7 @@ Examples:
     
     parser.add_argument(
         '--category', 
-        choices=['auth', 'security', 'database', 'maps', 'api', 'admin', 'integration', 'performance', 'clustering', 'dva_formula', 'dva_scenarios', 'dva_criteria'],
+        choices=['auth', 'security', 'database', 'maps', 'api', 'admin', 'integration', 'performance', 'clustering', 'dva_formula', 'dva_scenarios', 'dva_criteria', 'candidate_automation'],
         help='Run specific test category'
     )
     
