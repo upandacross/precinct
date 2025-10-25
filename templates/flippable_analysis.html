@@ -227,13 +227,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // Only load once
             if (!contentDiv.dataset.loaded) {
                 fetch('{{ url_for("ballot_matching_strategy_content") }}')
-                    .then(response => response.text())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('HTTP error ' + response.status);
+                        }
+                        return response.text();
+                    })
                     .then(html => {
                         contentDiv.innerHTML = html;
                         contentDiv.dataset.loaded = 'true';
                     })
                     .catch(error => {
-                        contentDiv.innerHTML = '<div class="alert alert-danger">Error loading strategy content. Please try again.</div>';
+                        console.error('Fetch Error:', error);
+                        contentDiv.innerHTML = '<div class="alert alert-danger">Error loading strategy content: ' + error.message + '<br>Please try refreshing the page.</div>';
                     });
             }
         });

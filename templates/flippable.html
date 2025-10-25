@@ -343,6 +343,12 @@
     </div>
 </div>
 
+<!-- Load jQuery, DataTables, and custom scripts -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
 <script>
 $(document).ready(function() {
     // Initialize DataTable with sorting and filtering
@@ -369,8 +375,10 @@ $(document).ready(function() {
                     $('#strategyContent').html(response);
                     $('#strategyContent').data('loaded', true);
                 },
-                error: function() {
-                    $('#strategyContent').html('<div class="alert alert-danger">Error loading strategy content. Please try again.</div>');
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', status, error);
+                    console.error('Response:', xhr.responseText);
+                    $('#strategyContent').html('<div class="alert alert-danger">Error loading strategy content: ' + status + ' - ' + error + '<br>Please try refreshing the page.</div>');
                 }
             });
         }
