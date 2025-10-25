@@ -758,6 +758,38 @@ def create_app():
             flash('Error loading ballot matching strategy document.', 'error')
             return redirect(url_for('index'))
     
+    @app.route('/ballot-matching-strategy-content')
+    @login_required
+    def ballot_matching_strategy_content():
+        """Return just the HTML content for the ballot matching strategy modal."""
+        try:
+            import markdown
+            
+            # Determine which version to show based on user role
+            if current_user.is_admin or current_user.is_county:
+                # Full version with examples for admin and county users
+                filename = '_BALLOT_MATCHING_STRATEGY.md'
+            else:
+                # Simplified version without examples for regular users
+                filename = '_BALLOT_MATCHING_STRATEGY_PUBLIC.md'
+            
+            filepath = os.path.join('doc', filename)
+            
+            if not os.path.exists(filepath):
+                return '<div class="alert alert-danger">Strategy document not found.</div>', 404
+            
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Convert markdown to HTML
+            html_content = markdown.markdown(content, extensions=['extra', 'codehilite'])
+            
+            return html_content
+        
+        except Exception as e:
+            app.logger.error(f'Error reading ballot matching strategy content: {str(e)}')
+            return '<div class="alert alert-danger">Error loading strategy content. Please try again.</div>', 500
+    
     # Flask-Admin setup
     admin = Admin(
         app, 

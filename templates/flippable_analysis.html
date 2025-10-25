@@ -16,9 +16,9 @@
                             <p class="mb-0 mt-2"><small><i class="fas fa-info-circle"></i> Analyzing past races (2020-2024) to identify patterns. Future enhancement will correlate with current ballot races.</small></p>
                         </div>
                         <div>
-                            <a href="{{ url_for('ballot_matching_strategy') }}" class="btn fw-bold" style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;">
+                            <button type="button" class="btn fw-bold" data-bs-toggle="modal" data-bs-target="#strategyModal" style="background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important;">
                                 <i class="fas fa-lightbulb"></i> Flippability and Future Races
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -153,6 +153,31 @@
     </div>
 </div>
 
+<!-- Ballot Matching Strategy Modal -->
+<div class="modal fade" id="strategyModal" tabindex="-1" aria-labelledby="strategyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header" style="text-shadow: none;">
+                <h5 class="modal-title text-dark" id="strategyModalLabel" style="text-shadow: none;">
+                    <i class="fas fa-map-marked-alt"></i> Ballot Matching Strategy
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-dark" id="strategyContent" style="text-shadow: none; max-height: 70vh; overflow-y: auto;">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading strategy content...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Add click handlers to table rows
@@ -193,6 +218,26 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.backgroundColor = '';
         });
     });
+    
+    // Load ballot matching strategy content when modal is shown
+    const strategyModal = document.getElementById('strategyModal');
+    if (strategyModal) {
+        strategyModal.addEventListener('show.bs.modal', function (e) {
+            const contentDiv = document.getElementById('strategyContent');
+            // Only load once
+            if (!contentDiv.dataset.loaded) {
+                fetch('{{ url_for("ballot_matching_strategy_content") }}')
+                    .then(response => response.text())
+                    .then(html => {
+                        contentDiv.innerHTML = html;
+                        contentDiv.dataset.loaded = 'true';
+                    })
+                    .catch(error => {
+                        contentDiv.innerHTML = '<div class="alert alert-danger">Error loading strategy content. Please try again.</div>';
+                    });
+            }
+        });
+    }
 });
 </script>
 

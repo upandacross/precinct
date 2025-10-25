@@ -164,6 +164,20 @@ Track major features, updates, and milestones for the Precinct Campaign Platform
 
 ## Earlier Development
 
+### Deployment & Operations
+- ✅ **Maintenance Mode System** - Zero-downtime deployment capability
+  - Flag file-based maintenance mode (`instance/MAINTENANCE_MODE`)
+  - Professional maintenance page with animated design
+  - SSH alias configured: `dg_precinct_root`
+  - Automated deployment script: `./deploy-with-maintenance.sh`
+  - Manual control scripts: `enable-maintenance.sh`, `disable-maintenance.sh`
+  - Server: Digital Ocean (138.197.96.240)
+  - App directory: `/home/precinct/precinct`
+  - Systemd service: `precinct`
+  - Total downtime during deployment: ~5-10 seconds
+  - **Usage:** Run `./deploy-with-maintenance.sh` after pushing to GitHub
+  - **Manual SSH:** `ssh dg_precinct_root` for server access
+
 ### Database & Infrastructure
 - ✅ PostgreSQL migration from SQLite
 - ✅ NC-specific database implementation
