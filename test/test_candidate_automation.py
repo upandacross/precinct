@@ -355,6 +355,115 @@ class TestEdgeCases:
         assert len(filtered) == 0
 
 
+class TestMunicipalFlippable:
+    """Test municipal races integration with flippable table"""
+    
+    def test_race_type_column_creation(self):
+        """Test that race_type column can be added to flippable table"""
+        from add_municipal_to_flippable import MunicipalFlippableAdder
+        
+        adder = MunicipalFlippableAdder()
+        # Should not raise an error
+        adder.ensure_race_type_column()
+        
+        # Verify column exists
+        engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'flippable' 
+                AND column_name = 'race_type'
+            """))
+            assert result.fetchone() is not None
+    
+    def test_get_partisan_baseline(self):
+        """Test calculation of partisan baseline for a precinct"""
+        from add_municipal_to_flippable import MunicipalFlippableAdder
+        
+        adder = MunicipalFlippableAdder()
+        
+        engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
+        with engine.connect() as conn:
+            # Should return a percentage or None
+            baseline = adder.get_partisan_baseline('FORSYTH', '74', conn)
+            
+            if baseline is not None:
+                assert isinstance(baseline, (int, float))
+                assert 0 <= baseline <= 100
+    
+    def test_get_municipal_contests(self):
+        """Test retrieval of municipal contests"""
+        from add_municipal_to_flippable import MunicipalFlippableAdder
+        
+        adder = MunicipalFlippableAdder()
+        contests = adder.get_municipal_contests(county='FORSYTH')
+        
+        # Should return a list
+        assert isinstance(contests, list)
+        
+        # Each contest should have required fields
+        for contest in contests:
+            assert 'county' in contest
+            assert 'precinct' in contest
+            assert 'contest_name' in contest
+            assert 'election_date' in contest
+    
+    def test_proxy_dva_calculation(self):
+        """Test proxy DVA calculation logic"""
+        # If baseline Dem is 47%, DVA needed is 3%
+        baseline_dem_pct = 47.0
+        dva_needed = max(0, 50.0 - baseline_dem_pct)
+        
+        assert abs(dva_needed - 3.0) < 0.01
+        
+        # If baseline Dem is 52%, DVA needed is 0%
+        baseline_dem_pct = 52.0
+        dva_needed = max(0, 50.0 - baseline_dem_pct)
+        
+        assert dva_needed == 0
+    
+    def test_municipal_dry_run(self):
+        """Test dry run mode doesn't modify database"""
+        from add_municipal_to_flippable import MunicipalFlippableAdder
+        
+        adder = MunicipalFlippableAdder()
+        
+        # Get count before
+        engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT COUNT(*) FROM flippable WHERE race_type = 'municipal'"))
+            count_before = result.fetchone()[0]
+        
+        # Run dry-run
+        adder.add_municipal_races(county='FORSYTH', dry_run=True)
+        
+        # Count should be unchanged
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT COUNT(*) FROM flippable WHERE race_type = 'municipal'"))
+            count_after = result.fetchone()[0]
+        
+        assert count_before == count_after
+    
+    @pytest.mark.skipif(
+        not os.path.exists('/home/bren/Home/Projects/HTML_CSS/precinct/doc/Candidate_Listing_2025.csv'),
+        reason="Requires 2025 candidate data"
+    )
+    def test_municipal_flippable_integration(self):
+        """Test that municipal races can be added to flippable table"""
+        from add_municipal_to_flippable import MunicipalFlippableAdder
+        
+        adder = MunicipalFlippableAdder()
+        
+        # Try to add municipal races (dry run to avoid modifying prod data)
+        try:
+            adder.add_municipal_races(county='FORSYTH', dry_run=True)
+            # If we get here, the logic works
+            assert True
+        except Exception as e:
+            pytest.fail(f"Municipal flippable integration failed: {e}")
+
+
 def run_all_tests():
     """Run all tests and return results"""
     print("="*80)

@@ -59,9 +59,19 @@ echo "$UPDATE_OUTPUT" >> "$LOG_FILE"
 if echo "$UPDATE_OUTPUT" | grep -q "New data detected"; then
     log "✓ NEW CANDIDATE DATA DETECTED!"
     
-    # Step 3: Generate ballot matching analysis
+    # Step 3: Update flippable table with municipal races
     log ""
-    log "Step 3: Generating ballot matching analysis..."
+    log "Step 3: Updating flippable table with municipal races..."
+    
+    if python3 app_administration/add_municipal_to_flippable.py --clear-municipal >> "$LOG_FILE" 2>&1; then
+        log "✓ Municipal races added to flippable table"
+    else
+        log "⚠️  Warning: Failed to update municipal races (continuing...)"
+    fi
+    
+    # Step 4: Generate ballot matching analysis
+    log ""
+    log "Step 4: Generating ballot matching analysis..."
     
     # Extract year from the update output or use current year
     YEAR=$(date +%Y)

@@ -13,6 +13,30 @@ Every election cycle, we face new ballots with different contests. But **histori
 3. **Build targeted voter lists** based on past DVA patterns
 4. **Predict which contests** will be most responsive to our strategies
 
+### What's Included in Our Flippable Data
+
+Our flippable race database now includes **both partisan and municipal races**:
+
+**Partisan Races (State & Federal):**
+- Governor, Lt. Governor, Attorney General, etc.
+- NC House and Senate
+- US House and Senate
+- DVA calculated using actual governor vote totals
+
+**Municipal Races (City & County):**
+- City/Town Mayors and Council Members
+- County Board of Commissioners
+- Other local offices
+- DVA calculated using **partisan baseline proxy** from the same precinct
+
+**Why Municipal Races Matter:**
+- Often the most winnable (lower information, less partisan loyalty)
+- Build bench strength for future state races
+- Direct impact on local communities
+- Same DVA activation strategies apply
+
+**Technical Note:** Municipal race DVA uses the average Democratic governor vote percentage from partisan races in the same precinct as a baseline. This proxy method allows us to predict flippability even in non-partisan municipal contests.
+
 ---
 
 ## The Matching Process

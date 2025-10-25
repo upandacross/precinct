@@ -13,6 +13,26 @@ Every election cycle, we face new ballots with different contests. But **histori
 3. **Build targeted voter lists** based on past DVA patterns
 4. **Predict which contests** will be most responsive to our strategies
 
+### What's Included in Our Flippable Data
+
+Our flippable race database includes **both partisan and municipal races**:
+
+**Partisan Races:**
+- Statewide offices (Governor, Attorney General, etc.)
+- State legislature (NC House & Senate)
+- Federal races (US House & Senate)
+
+**Municipal Races:**
+- City/Town Mayors and Council Members
+- County Board of Commissioners
+- Other local offices
+
+**Why Municipal Races Matter:**
+- Often the most winnable (lower information, less partisan)
+- Build bench strength for future state races
+- Direct impact on local communities
+- Same voter activation strategies apply
+
 ---
 
 ## The Matching Process

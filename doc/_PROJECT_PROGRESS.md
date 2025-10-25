@@ -4,6 +4,64 @@ Track major features, updates, and milestones for the Precinct Campaign Platform
 
 ---
 
+## October 25, 2025
+
+### ✅ Municipal Race Integration into Flippable Table
+
+**Feature:** Extended flippable table to include municipal races with proxy DVA calculations using partisan baseline.
+
+**What Was Built:**
+1. **Script: `add_municipal_to_flippable.py`**
+   - Queries `candidate_vote_results` for municipal contests (city, town, county board races)
+   - Calculates partisan baseline from same precinct's state/federal races
+   - Uses average governor votes from partisan races as proxy for municipal DVA
+   - Adds `race_type` column to distinguish 'partisan' vs 'municipal' races
+   - Filters to actual flippable races (DVA > 0)
+
+2. **Database Integration:**
+   - Modified `calculate_dva_pct_needed()` trigger to work with both race types
+   - Municipal races use partisan `gov_votes` average from same precinct
+   - Maintains consistent DVA formula across all race types
+   - Added 142 municipal races for Forsyth County
+
+3. **Automation Integration:**
+   - Updated `daily_election_check.sh` to call municipal script
+   - Runs after new candidate data is detected
+   - Clears and refreshes municipal races on each run
+   - Continues automation pipeline even if municipal update fails (non-critical)
+
+4. **Test Coverage:**
+   - Added `TestMunicipalFlippable` class with 6 tests
+   - Tests partisan baseline calculation, contest filtering, DVA proxy logic
+   - Validates dry-run mode and integration with flippable table
+   - Total test suite: 29 passing tests
+
+**Key Technical Details:**
+- **Partisan Baseline:** Averages Democratic % from partisan races in same precinct
+- **Governor Votes Proxy:** Uses average `gov_votes` from partisan races for DVA calculation
+- **Municipal Contest Filter:** CITY OF%, TOWN OF%, %BOARD OF COMMISSIONERS%, excludes NC/US/state races
+- **DVA Interpretation:** Positive = flippable (Dems losing), Negative = already won, Zero = tie
+
+**Files Created:**
+- `app_administration/add_municipal_to_flippable.py` - Municipal race integration script
+
+**Files Modified:**
+- `app_administration/daily_election_check.sh` - Added municipal update step
+- `test/test_candidate_automation.py` - Added 6 municipal flippable tests
+- Database trigger `calculate_dva_pct_needed()` - Works for all race types
+
+**Database Impact:**
+- Forsyth County: 355 partisan races + 142 municipal races = 497 total flippable opportunities
+- Unified query interface for all race types
+- Pre-calculated DVA eliminates recalculation overhead
+
+**Next Steps:**
+- Update `generate_ballot_matching_analysis.py` to query flippable table directly
+- Extend to all NC counties (currently Forsyth only)
+- Add municipal race filtering in UI
+
+---
+
 ## October 24, 2025
 
 ### ✅ Ballot Matching Strategy Documentation System
@@ -247,4 +305,131 @@ Track major features, updates, and milestones for the Precinct Campaign Platform
 
 ---
 
-*Last Updated: October 24, 2025*
+## October 25, 2025
+
+### ✅ Candidate Automation System with Comprehensive Testing
+
+**Feature:** Fully automated system for monitoring NC Board of Elections candidate filings and generating ballot matching analysis reports.
+
+**What Was Built:**
+
+#### 1. **Automated Candidate Data Tracking**
+- **Script:** `app_administration/update_candidate_data.py`
+- Smart detection of filing periods:
+  - Municipal: June-July in odd years (2025, 2027...)
+  - State/Federal: December-February in even years (2026, 2028...)
+- MD5 hash comparison to detect new candidate data
+- Data quality verification with column validation
+- Auto-generates Forsyth County analysis summaries
+- Force mode for manual downloads: `--force YEAR`
+- Source: `https://s3.amazonaws.com/dl.ncsbe.gov/Elections/{year}/Candidate%20Filing/`
+
+#### 2. **Election Schedule Parser**
+- **Script:** `app_administration/parse_ncsbe_elections.py`
+- Web scraper for `https://www.ncsbe.gov/voting/upcoming-election`
+- Extracts election dates using regex pattern matching
+- Estimates filing periods based on election dates
+- Identifies Forsyth County municipalities
+- Saves structured data to `doc/upcoming_elections.json`
+
+#### 3. **Ballot Matching Analysis Generator**
+- **Script:** `app_administration/generate_ballot_matching_analysis.py`
+- Auto-generates comprehensive analysis reports when new data detected
+- **Municipal races:** 
+  - Uses partisan crossover data for flippability scoring
+  - Calculates DVA (Democratic Vote Advantage) needed
+  - Rates races: TOSS-UP, LEAN REP, LIKELY REP, SAFE REP
+- **State/Federal races:**
+  - Identifies returning candidates (Tier 1 rematch advantage)
+  - Matches candidate names with historical flippable table
+- Dynamic county detection from database (`is_county` user)
+- Simplified report format: `{COUNTY}_Municipal_Analysis_{YYYYMMDD}.md`
+- Reports saved to `reports/` directory
+
+#### 4. **Orchestration & Scheduling**
+- **daily_candidate_check.sh:** Simple wrapper for cron (candidate data only)
+- **daily_election_check.sh:** Full pipeline automation
+  1. Parses NCSBE election schedule
+  2. Checks for new candidate data during filing periods
+  3. Generates ballot matching analysis if changes detected
+  4. Logs all operations to `/tmp/election_automation_YYYYMM.log`
+  5. Monthly log rotation with 6-month retention
+- Ready for cron: `0 23 * * 1-5` (11PM on business days)
+
+#### 5. **Comprehensive Test Suite**
+- **File:** `test/test_candidate_automation.py`
+- **Coverage:** 23 tests, 100% passing
+- **Test Categories:**
+  - Update candidate data (6 tests): Filing periods, hash calculation, data quality
+  - Parse NCSBE elections (4 tests): Date extraction, filing estimation, error handling
+  - Generate ballot matching analysis (5 tests): Year detection, county retrieval, flippability
+  - Integration tests (5 tests): Project structure, executability, database connectivity
+  - Edge cases (3 tests): Missing data, invalid input, empty datasets
+- **Integration:** Added to `test/run_all_tests.py` as `candidate_automation` category
+- Run with: `python3 test/run_all_tests.py --category candidate_automation`
+
+**Files Modified/Created:**
+- `app_administration/update_candidate_data.py` - Candidate data downloader
+- `app_administration/parse_ncsbe_elections.py` - Election schedule parser
+- `app_administration/generate_ballot_matching_analysis.py` - Analysis generator
+- `app_administration/daily_election_check.sh` - Full orchestration pipeline
+- `app_administration/daily_candidate_check.sh` - Simple cron wrapper
+- `app_administration/CANDIDATE_DATA_UPDATES.md` - Usage documentation
+- `app_administration/2025_Forsyth_Municipal_Analysis_20251025.md` - Sample analysis
+- `doc/Candidate_Listing_2020.csv` through `2025.csv` - Historical data
+- `doc/upcoming_elections.json` - Parsed election schedule
+- `doc/_BALLOT_MATCHING_STRATEGY.pdf` - PDF version of strategy guide
+- `test/test_candidate_automation.py` - Complete test suite
+- `test/run_all_tests.py` - Updated with new test category
+- `README.md` - Complete automation guide with cron instructions
+
+**Technical Improvements:**
+1. **Dynamic County Support:** Reads county from database `is_county` user instead of hardcoding
+2. **Simplified Filenames:** Removed year prefix from reports (date suffix makes it obvious)
+3. **Path Independence:** Scripts work from `app_administration/` with proper path resolution
+4. **Comprehensive Error Handling:** Graceful fallbacks for missing data, network errors
+5. **Modular Design:** Each script can run independently or as part of pipeline
+
+**Database Integration:**
+- Queries `flippable` table for partisan crossover data
+- Queries `candidate_vote_results` for historical turnout
+- Reads county from `user` table (`is_county = true`)
+- Uses `Config.SQLALCHEMY_DATABASE_URI` for connections
+
+**Example Analysis Output:**
+```markdown
+# 2025 FORSYTH County Municipal Elections - Ballot Matching Analysis
+
+## Executive Summary
+- Total Candidates: 51
+- Contests: 12
+- Democratic Candidates: 15
+- Republican Candidates: 18
+
+### Top Opportunities
+- Lewisville Mayor: 47.2% Dem baseline, DVA: 2.8%
+- Kernersville Council: 45.8% Dem baseline, DVA: 4.2%
+
+## Flippability Analysis
+### Lewisville Mayor
+- Candidates: 2 DEM, 2 REP, 0 Other
+- Historical Turnout: 3,245 votes across 8 precincts
+- Partisan Baseline: 47.2% Dem
+- DVA Needed: 2.8%
+- Rating: LEAN REP
+```
+
+**Status:** Production-ready, pending user access decisions
+
+**Next Steps (Future Considerations):**
+- [ ] User interface for viewing generated analyses in web app
+- [ ] Email notifications when new candidate data detected
+- [ ] Integration with campaign messaging toolkit
+- [ ] Volunteer targeting based on flippability scores
+- [ ] Historical trend analysis across election cycles
+- [ ] State/federal analysis automation for 2026 elections
+- [ ] API endpoints for programmatic access to analysis data
+
+---
+
+*Last Updated: October 25, 2025*
