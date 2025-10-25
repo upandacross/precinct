@@ -32,14 +32,14 @@ Before we can match anything, we need to know what races voters will see:
 
 Look at our historical flippable race data and ask:
 - Have we seen **this type of race** flip or nearly flip before?
-- What were the **margins** in those races?
+- What were the **vote gaps** in those races?
 - How much **DVA activation** was needed?
 - Which **precincts** showed the most promise?
 
 **Example Matches:**
 - **Upcoming:** Winston-Salem City Council Race
 - **Historical:** 3 flippable city council races in Winston-Salem precincts (2020-2024)
-- **Pattern:** Average DVA needed was 12%, margins under 4%
+- **Pattern:** Average DVA needed was 12%, vote gaps under 4%
 - **Insight:** This race type is HIGHLY WINNABLE with DVA activation
 
 ### Step 3: Identify Geographic Overlap
@@ -65,17 +65,17 @@ Not all precincts are equal. Some have proven track records:
 **Answer:** Match candidate recruitment to proven patterns:
 
 1. **Ultra-Competitive + Low DVA** = RECRUIT IMMEDIATELY
-   - Historical margin under 3%
+   - Historical vote gap under 3%
    - DVA needed under 12%
    - Example: School Board in Precinct 45 (historically needed 10% DVA)
 
 2. **Highly Competitive + Moderate DVA** = HIGH PRIORITY
-   - Historical margin 3-5%
+   - Historical vote gap 3-5%
    - DVA needed 12-20%
    - Example: County Commissioner in Precinct 74
 
 3. **Competitive + Higher DVA** = STRONG CANDIDATE NEEDED
-   - Historical margin 5-8%
+   - Historical vote gap 5-8%
    - DVA needed 20-30%
    - Requires both candidate quality AND field operation
 
@@ -93,7 +93,7 @@ Some of the best candidates are those who've already run—and nearly won. Our h
 **Why This Matters:**
 
 1. **Built-In Motivation**
-   - They've tasted defeat by narrow margins
+   - They've tasted defeat by narrow vote gaps
    - They KNOW they can win with just a little more support
    - Our ballot matching data shows them exactly what's needed
 
@@ -124,7 +124,7 @@ Some of the best candidates are those who've already run—and nearly won. Our h
 - **2026 Opportunity:** School Board race in same precincts
 - **Match:**
   - Same voter universe (geographic overlap)
-  - School Board = easier race type (higher DVA, lower margins historically)
+  - School Board = easier race type (higher DVA, lower vote gaps historically)
   - John's existing name recognition + easier race = WIN
   - **Pitch:** "You almost won Commissioner. School Board data shows you'd win"
 
@@ -146,7 +146,7 @@ Some of the best candidates are those who've already run—and nearly won. Our h
    - Look for name matches across different contests
 
 2. **Build "Almost Winners" Database:**
-   - Track candidates with ≤3% loss margins
+   - Track candidates with ≤3% vote gaps
    - Note which race types they've run for
    - Map their geographic strength (which precincts)
    - Calculate improvement trajectory if they've run multiple times
@@ -168,8 +168,8 @@ Some of the best candidates are those who've already run—and nearly won. Our h
 
 - *District 3 School Board: Flippable in 2020, 2022, 2024 (different candidates)*
 - *Average DVA needed: 13%*
-- *Historical margins: 2.8%, 3.1%, 2.4%*
-- *Sarah's 2020 result: 3.5% margin = SLIGHTLY worse than average*
+- *Historical vote gaps: 2.8%, 3.1%, 2.4%*
+- *Sarah's 2020 result: 3.5% vote gap = SLIGHTLY worse than average*
 
 *Recruitment Strategy:*
 - *Contact Sarah: "You were close in 2020. We now have data showing this race IS winnable."*
@@ -212,7 +212,7 @@ Just as we track our own candidates, tracking **Republican candidate movement** 
 **Republican Movement Scenarios:**
 
 **Scenario A: The Ambitious Republican**
-- **2020:** Bob Johnson (R) wins County Commissioner by 2.1% (flippable margin)
+- **2020:** Bob Johnson (R) wins County Commissioner by 2.1% (flippable vote gap)
 - **2024:** Bob runs for State House, leaves Commissioner seat
 - **2026 Analysis:**
   - Commissioner seat now OPEN

@@ -28,7 +28,7 @@ Before we can match anything, we need to know what races voters will see:
 
 Look at our historical flippable race data and ask:
 - Have we seen **this type of race** flip or nearly flip before?
-- What were the **margins** in those races?
+- What were the **vote gaps** in those races?
 - How much **DVA activation** was needed?
 - Which **precincts** showed the most promise?
 
@@ -50,15 +50,15 @@ Not all precincts are equal. Some have proven track records:
 **Answer:** Match candidate recruitment to proven patterns:
 
 1. **Ultra-Competitive + Low DVA** = RECRUIT IMMEDIATELY
-   - Historical margin under 3%
+   - Historical vote gaps under 3%
    - DVA needed under 12%
 
 2. **Highly Competitive + Moderate DVA** = HIGH PRIORITY
-   - Historical margin 3-5%
+   - Historical vote gaps 3-5%
    - DVA needed 12-20%
 
 3. **Competitive + Higher DVA** = STRONG CANDIDATE NEEDED
-   - Historical margin 5-8%
+   - Historical vote gaps 5-8%
    - DVA needed 20-30%
    - Requires both candidate quality AND field operation
 
@@ -71,7 +71,7 @@ Some of the best candidates are those who've already run—and nearly won. Our h
 **Why This Matters:**
 
 1. **Built-In Motivation**
-   - They've tasted defeat by narrow margins
+   - They've tasted defeat by narrow vote gaps
    - They KNOW they can win with just a little more support
    - Our ballot matching data shows them exactly what's needed
 
@@ -95,7 +95,7 @@ Some of the best candidates are those who've already run—and nearly won. Our h
    - Look for name matches across different contests
 
 2. **Build "Almost Winners" Database:**
-   - Track candidates with ≤3% loss margins
+   - Track candidates with ≤3% vote gaps
    - Note which race types they've run for
    - Map their geographic strength (which precincts)
    - Calculate improvement trajectory if they've run multiple times
