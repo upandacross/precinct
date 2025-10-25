@@ -763,31 +763,37 @@ def create_app():
     def ballot_matching_strategy_content():
         """Return just the HTML content for the ballot matching strategy modal."""
         try:
-            import markdown
-            
             # Determine which version to show based on user role
-            if current_user.is_admin or current_user.is_county:
+            if current_user.is_authenticated and (current_user.is_admin or current_user.is_county):
                 # Full version with examples for admin and county users
                 filename = '_BALLOT_MATCHING_STRATEGY.md'
+                app.logger.info(f'Loading full strategy for user: {current_user.username} (admin={current_user.is_admin}, county={current_user.is_county})')
             else:
                 # Simplified version without examples for regular users
                 filename = '_BALLOT_MATCHING_STRATEGY_PUBLIC.md'
+                app.logger.info(f'Loading public strategy for user: {current_user.username if current_user.is_authenticated else "anonymous"} (admin={current_user.is_admin if current_user.is_authenticated else "N/A"}, county={current_user.is_county if current_user.is_authenticated else "N/A"})')
             
             filepath = os.path.join('doc', filename)
+            app.logger.info(f'Looking for file: {filepath}')
             
             if not os.path.exists(filepath):
+                app.logger.error(f'File not found: {filepath}')
                 return '<div class="alert alert-danger">Strategy document not found.</div>', 404
             
             with open(filepath, 'r', encoding='utf-8') as f:
                 content = f.read()
             
+            app.logger.info(f'Successfully read {len(content)} characters from {filename}')
+            
             # Convert markdown to HTML
             html_content = markdown.markdown(content, extensions=['extra', 'codehilite'])
+            
+            app.logger.info(f'Successfully converted markdown to HTML ({len(html_content)} characters)')
             
             return html_content
         
         except Exception as e:
-            app.logger.error(f'Error reading ballot matching strategy content: {str(e)}')
+            app.logger.error(f'Error reading ballot matching strategy content: {str(e)}', exc_info=True)
             return '<div class="alert alert-danger">Error loading strategy content. Please try again.</div>', 500
     
     # Flask-Admin setup
